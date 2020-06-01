@@ -76,6 +76,11 @@ def get_genparts(genparts,pid=11,antipart=True,status=PartStatus.PREFSR):
                     selected.append(get_lastcopy(part))
                 else:
                     raise RuntimeError("error status {} not implimented".format(status))
+            else:
+                #now we do the case where its particle gun and thus there is no hard process
+                #however in this case it will have no mothers so we can detect it that way
+                if part.numberOfMothers()==0:
+                    selected.append(part)
     return selected
 
 def match_to_gen(eta,phi,genparts,pid=11,antipart=True,max_dr=0.1,status=PartStatus.PREFSR):
