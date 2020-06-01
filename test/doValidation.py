@@ -72,10 +72,25 @@ def make_val_hists(in_filenames,out_name):
                     #print("sucess {}".format(ref.pt()))
               #  print("{} {} {} {} {}".format(genpart.pdgId(),
                 #print("{} {} {} {} {}".format(egobj.pt(),egobj.eta(),egobj.phi(),egobj.gsfTracks()[0].pt(),gen_pt))
+
+def set_style_att(hist,color=None,line_width=None,marker_style=None,line_style=None,marker_size=None):
+    if color!=None:
+        hist.SetLineColor(color)
+        hist.SetMarkerColor(color)
+    if line_width!=None:
+        hist.SetLineWidth(line_width)
+    if line_style!=None:
+        hist.SetLineWidth(line_style)
+    if marker_style!=None:
+        hist.SetMarkerStyle(marker_style)
+    if marker_size!=None:
+        hist.SetMarkerSize(marker_size)
+            
         
 def plot_with_ratio(numer,denom,div_opt=""):
     numer_label = "ref"
     denom_label = "tar"
+    ROOT.gStyle.SetOptStat(0)
     c1 = ROOT.TCanvas("c1","c1",900,750)
     c1.cd()
     spectrum_pad = ROOT.TPad("spectrumPad","newpad",0.01,0.30,0.99,0.99)
@@ -98,12 +113,12 @@ def plot_with_ratio(numer,denom,div_opt=""):
     ratio_pad.cd()
     ratio_pad.SetTopMargin(0.05)
     ratio_pad.SetBottomMargin(0.3)
-    #    ratio_pad.SetRightMargin(0.1)
     ratio_pad.SetFillStyle(0)
     ratio_hist = numer.Clone("ratioHist")
+    ratio_hist.Sumw2()
     ratio_hist.Divide(numer,denom,1,1,div_opt)
-#    ratio_hist = make_ratio_hist(numer.hist,denom.hist,div_opt)
 
+    set_style_att(ratio_hist,color=1,marker_style=8)
 #    AnaFuncs::setHistAttributes(ratio_hist,1,1,8,1)
     ratio_hist.SetTitle("")
     #  ratio_hist.GetXaxis().SetLabelSize(ratio_hist.GetXaxis().GetLabelSize()*(0.99-0.33)/0.33)
@@ -112,10 +127,9 @@ def plot_with_ratio(numer,denom,div_opt=""):
     ratio_hist.GetXaxis().SetTitle(xaxis_title)
     ratio_hist.GetYaxis().SetLabelSize(0.1)
     ratio_hist.GetYaxis().SetTitleSize(0.1)
-    ratio_hist.GetYaxis().SetTitleOffset(0.65) 
+    ratio_hist.GetYaxis().SetTitleOffset(0.3) 
     ratio_hist.GetYaxis().SetTitle("ratio")   
-  
-    ratio_hist.Draw()
+    ratio_hist.Draw("EP")
     spectrum_pad.cd()
     return c1,spectrum_pad,ratio_pad,ratio_hist,leg
 
@@ -141,16 +155,12 @@ def compare_hists(ref_filename,tar_filename,tar_label="target",ref_label="refere
             ref_hist.SetMarkerStyle(8)
             ref_hist.SetMarkerColor(4)
             res = plot_with_ratio(tar_hist,ref_hist,"")
-            res.Update()
-            raw_input("press enter to continue")
-
-            tar_hist.Draw("EP")
-            ref_hist.Draw("SAME EP")
-            ROOT.c1.Update()
-            ROOT.c1.Write("{}Canvas".format(key.GetName()))
+            c1 = res[0]
+            c1.Update()
+            c1.Write("{}Canvas".format(key.GetName()))
             for suffex in [".C",".png"]:
-                ROOT.c1.Print(os.path.join(out_dir,"{}{}".format(key.GetName(),suffex)))
-
+                c1.Print(os.path.join(out_dir,"{}{}".format(key.GetName(),suffex)))
+             
         else:
             print("ref hist",key.GetName(),"not found")
             
