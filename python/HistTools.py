@@ -18,13 +18,33 @@ class VarHist:
         else:
             return True
     
-    def fill(self,obj):
-        self.hist.Fill(CoreTools.call_func(obj,self.var_func))
+    def fill(self,obj,weight=1.):
+        self.hist.Fill(CoreTools.call_func(obj,self.var_func),weight)
+
+class HistCollData: 
+    def setval(self,**kwargs):
+        for key,value in kwargs.items():
+            if hasattr(self,key):
+                setattr(self,key,value)
+            else:
+                raise AttributeError("HistCollData has no attribute {}".format(key))
+
+    def __init__(self,**kwargs):
+        self.descript = ""
+        self.norm_val = 0.
+        self.label = ""
+        self.is_normable = True
+        self.is_effhist = False
+        self.display = True
+        self.hist_names = []
+        self.setval(**kwargs)
     
+
 class HistColl:
-    def __init__(self,suffix):
+    def __init__(self,suffix,label="",descript=""):
         self.hists = []
         self.suffix = suffix
+        self.metadata = HistCollData(label=label,descript=descript)
 
     def strip_suffix(self,name):
         start = name.rfind(self.suffix)
@@ -36,25 +56,25 @@ class HistColl:
     def add_hist(self,var_func,name,title,nbins,var_min,var_max,cut_func=None):
         self.hists.append(VarHist(var_func,"{name}{suffix}".format(name=name,suffix=self.suffix),title,nbins,var_min,var_max,cut_func))
     
-    def fill(self,obj):
+    def fill(self,obj,weight=1.):
         cuts_failed = [i for i,v in enumerate(self.hists) if not v.passcut(obj)]
         
         for histnr,hist in enumerate(self.hists):
             if len(cuts_failed)==0 or len(cuts_failed)==1 and histnr in cuts_failed:
-                hist.fill(obj)
+                hist.fill(obj,weight)
+
     
-    
-def create_histcoll(is_barrel=True,add_gsf=False,tag=""):
-    hist_coll = HistColl("{tag}Hist".format(tag=tag))
-    hist_coll.add_hist("et()","et","Et Hist",20,0,100,lambda x: x>20)
+def create_histcoll(is_barrel=True,add_gsf=False,tag="",label="",descript=""):
+    hist_coll = HistColl("{tag}Hist".format(tag=tag),label=label,descript=descript)
+    hist_coll.add_hist("et()","et",";E_{T} [GeV];entries",20,0,100,lambda x: x>20)
     if is_barrel:
-        hist_coll.add_hist("eta()","eta","Eta Hist",60,-3,3,lambda x: 0<abs(x)<1.4442)
+        hist_coll.add_hist("eta()","eta",";#eta;entries",60,-3,3,lambda x: 0<abs(x)<1.4442)
     else:
-        hist_coll.add_hist("eta()","eta","Eta Hist",60,-3,3,lambda x: 1.566<abs(x)<3.0)
-    hist_coll.add_hist("phi()","phi","Phi Hist",64,-3.2,3.2)
+        hist_coll.add_hist("eta()","eta",";#eta;entries",60,-3,3,lambda x: 1.566<abs(x)<3.0)
+    hist_coll.add_hist("phi()","phi",";#phi [rad];entries",64,-3.2,3.2)
 
     if add_gsf:
-        hist_coll.add_hist("gsfTracks().at(0).pt()","gsfTrkPt","GsfTrk pt Hist",20,0,100)
+        hist_coll.add_hist("gsfTracks().at(0).pt()","gsfTrkPt",";GsfTrk p_{T} [GeV];entries",20,0,100)
     
     return hist_coll
 

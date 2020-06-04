@@ -32,6 +32,30 @@ class EvtData:
         except RuntimeError:
             return None
            
+class EvtWeights:
+    def __init__(self,input_filename,lumi=0.075):
+        if input_filename: 
+            with open(input_filename,'r') as f:
+                self.data = json.load(f)
+        else:
+            self.data = {}            
+        self.warned = []
+        self.lumi = lumi #luminosity to weight to in pb
+
+    def weight_from_name(self,dataset_name):
+        if dataset_name in self.data:
+            val = self.data[dataset_name]
+            return val['xsec']/val['nrtot']*self.lumi
+        else:
+            if dataset_name not in self.warned:
+                self.warned.append(dataset_name) 
+                print("{} not in weights file, returning weight 1".format(dataset_name))
+            return 1.
+
+    def weight_from_evt(self,event):
+        filename = event.getTFile().GetName().split("/")[-1]
+        dataset_name = re.search(r'(.+)(_\d+_EDM.root)',filename).groups()[0]
+        return self.weight_from_name(dataset_name)
 
 def add_product(prods,name,type_,tag):
     prods.append({'name' : name, 'type' : type_, 'tag' : tag})
@@ -39,3 +63,12 @@ def add_product(prods,name,type_,tag):
 std_products=[]
 add_product(std_products,"egtrigobjs","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtraL1Seeded")
 add_product(std_products,"genparts","std::vector<reco::GenParticle>","genParticles")
+
+phaseII_products = []
+add_product(phaseII_products,"egtrigobjs","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtra")
+add_product(phaseII_products,"genparts","std::vector<reco::GenParticle>","genParticles")
+add_product(phaseII_products,"l1trks","std::vector<TTTrackExtra<edm::Ref<edm::DetSetVector<Phase2TrackerDigi>,Phase2TrackerDigi,edm::refhelper::FindForDetSetVector<Phase2TrackerDigi> > > >","hltEgammaHLTPhase2Extra")
+add_product(phaseII_products,"trkpart","std::vector<TrackingParticle>","hltEgammaHLTPhase2Extra")
+add_product(phaseII_products,"hcalhits","edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> >","hltEgammaHLTExtra")
+add_product(phaseII_products,"trksv0","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV0")
+add_product(phaseII_products,"trksv0","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV2")
