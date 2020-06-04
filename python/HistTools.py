@@ -14,8 +14,7 @@ class CutBin:
         self.bins = []
 
         for idx,bin_low in enumerate(bins[:-1]):
-            bin_high = bins[idx+1]
-            print(var_func,var_label,bin_low,bin_high)
+            bin_high = bins[idx+1]            
             if bin_low!=None and bin_high!=None:
                 self.bins.append([bin_low,bin_high])
        
@@ -23,24 +22,24 @@ class CutBin:
         var = CoreTools.call_func(obj,self.var_func)
         if self.do_abs:
             var = abs(var)
-
-        print(self.var_func,self.do_abs,var)
         for bin_nr,bin_range in enumerate(self.bins):
-            print("bin nr",bin_nr,"range ",bin_range)
             if var>=bin_range[0] and var<bin_range[1]:
-                print("reutring bin_nr")
                 return bin_nr
         return None
 
     def get_bin_str(self,binnr):
         return "{}{}{}".format(self.bins[binnr][0],self.var_label,self.bins[binnr][1]).replace(".","p").replace("-","M")
+        
+    def get_cut_label(self,binnr):
+        return "{} #leq {} < {}".format(self.bins[binnr][0],self.var_label,self.bins[binnr][1])
 
 class VarHist:
-    def __init__(self,var_func,name,title,nbins,var_min,var_max,cut_func=None):
+    def __init__(self,var_func,name,title,nbins,var_min,var_max,cut_func=None,cut_labels=[]):
         self.var_func = var_func
         self.cut_func = cut_func
         self.hist = ROOT.TH1D(name,title,nbins,var_min,var_max)
-        
+        self.cut_labels = cut_labels
+
     def passcut(self,obj):
         if self.cut_func:
             return self.cut_func(CoreTools.call_func(obj,self.var_func))
@@ -52,22 +51,24 @@ class VarHist:
 
 class VarHistBinned:
 
-    def init_hists(self,hists,cutbins,bin_suffix,*args,**kwargs):
+    def init_hists(self,hists,cutbins,bin_suffix,cut_labels,*args,**kwargs):
         for bin_nr,bin_range in enumerate(cutbins[0].bins):
             hists.append([])
             newbin_suffix = "{}{}Bin{}".format(bin_suffix,cutbins[0].var_label,bin_nr)
+            newcut_labels = list(cut_labels)
+            newcut_labels.append(cutbins[0].get_cut_label(bin_nr))
             if cutbins[1:]:
-                self.init_hists(hists[-1],cutbins[1:],newbin_suffix,*args,**kwargs)
+                self.init_hists(hists[-1],cutbins[1:],newbin_suffix,newcut_labels,*args,**kwargs)
             else:
                 name = "{name}{suffix}".format(name=args[1],suffix=newbin_suffix)
                 new_args = args[:1] + (name,) + args[2:]
-                hists[-1] = VarHist(*new_args,**kwargs)
+                hists[-1] = VarHist(*new_args,cut_labels=newcut_labels,**kwargs)
             
 
     def __init__(self,cutbins,*args,**kwargs):
         self.cutbins = cutbins
         self.hists = []
-        self.init_hists(self.hists,self.cutbins,"",*args,**kwargs)
+        self.init_hists(self.hists,self.cutbins,"",[],*args,**kwargs)
         
     def _fill(self,obj,hists,cutbins,weight=1.):
         bin_nr = cutbins[0].get_binnr(obj)
@@ -80,6 +81,23 @@ class VarHistBinned:
     def fill(self,obj,weight=1.):
         self._fill(obj,self.hists,self.cutbins,weight)
 
+    def _get_hist_data(self,hists,data):
+        """ Okay this is a bit dirty, as the histograms are in n-dim list 
+        it recursively loops over the list entry till its no longer a sequence
+        which means it found the histogram and can append its data
+        """
+        try:
+            for hist in hists:
+                self._get_hist_data(hist,data)
+        except TypeError:
+            hist_dict = {"name" : hists.hist.GetName(),"cut_labels" : hists.cut_labels}
+            data.append(hist_dict)
+        return data
+
+    def get_hist_data(self):
+        data = []
+        return self._get_hist_data(self.hists,data)
+        
 
 
 class HistCollData: 
@@ -91,7 +109,7 @@ class HistCollData:
                 raise AttributeError("HistCollData has no attribute {}".format(key))
 
     def __init__(self,**kwargs):
-        self.descript = ""
+        self.desc = ""
         self.norm_val = 0.
         self.label = ""
         self.is_normable = True
@@ -102,10 +120,10 @@ class HistCollData:
     
 
 class HistColl:
-    def __init__(self,suffix,label="",descript="",cutbins=None):
+    def __init__(self,suffix,label="",desc="",cutbins=None):
         self.hists = []
         self.suffix = suffix
-        self.metadata = HistCollData(label=label,descript=descript)
+        self.metadata = HistCollData(label=str(label),desc=str(desc))
         self.cutbins = cutbins
 
     def strip_suffix(self,name):
@@ -115,22 +133,26 @@ class HistColl:
         else:
             return str(name)
 
-    def add_hist_old(self,var_func,name,title,nbins,var_min,var_max,cut_func=None):
-        self.hists.append(VarHist(var_func,"{name}{suffix}".format(name=name,suffix=self.suffix),title,nbins,var_min,var_max,cut_func))
-
     def add_hist(self,*args,**kwargs):
         name = "{name}{suffix}".format(name=args[1],suffix=self.suffix)
         new_args = args[:1] + (name,) + args[2:]
         self.hists.append(VarHistBinned(self.cutbins,*new_args,**kwargs))
-
     
     def fill(self,obj,weight=1.):
         for histnr,hist in enumerate(self.hists):
             hist.fill(obj,weight)
 
+    def get_metadata_dict(self):
+        md_dict = dict(self.metadata.__dict__)
+        print(md_dict)
+        md_dict['hists'] = []
     
-def create_histcoll(add_gsf=False,tag="",label="",descript="",cutbins=None):
-    hist_coll = HistColl("{tag}Hist".format(tag=tag),label=label,descript=descript,cutbins=cutbins)
+        for hist in self.hists:
+            md_dict['hists'].append(hist.get_hist_data())
+        return md_dict
+            
+def create_histcoll(add_gsf=False,tag="",label="",desc="",cutbins=None,meta_data=None):
+    hist_coll = HistColl("{tag}Hist".format(tag=tag),label=label,desc=desc,cutbins=cutbins)
     hist_coll.add_hist("et()","et",";E_{T} [GeV];entries",20,0,100)
     hist_coll.add_hist("eta()","eta",";#eta;entries",60,-3,3)
     hist_coll.add_hist("phi()","phi",";#phi [rad];entries",64,-3.2,3.2)
@@ -138,6 +160,8 @@ def create_histcoll(add_gsf=False,tag="",label="",descript="",cutbins=None):
     if add_gsf:
         hist_coll.add_hist("gsfTracks().at(0).pt()","gsfTrkPt",";GsfTrk p_{T} [GeV];entries",20,0,100)
     
+    if meta_data!=None:
+        meta_data[tag] = hist_coll.get_metadata_dict()
     return hist_coll
 
 def make_effhists_fromcoll(numer,denom,tag="",dir_=None,out_hists=[]):

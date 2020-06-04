@@ -28,11 +28,15 @@ def make_val_hists(in_filenames,out_name,norm_to=None):
     out_file = ROOT.TFile(out_name,"RECREATE")
 
     cutbins = [HistTools.CutBin("et()","Et",[20,50,100]),
-               HistTools.CutBin("eta()","Eta",[0,1.4442,1.57,2.5,3.0],do_abs=True)]
-    
-    hists_genmatch = HistTools.create_histcoll(tag="GenMatch",cutbins=cutbins)
-    hists_genmatch_seed = HistTools.create_histcoll(tag="EBGenMatchSeed",cutbins=cutbins)
-    hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="EEGenMatchTrk",cutbins=cutbins)
+               HistTools.CutBin("eta()","Eta",[0,1.4442,None,1.57,2.5,3.0],do_abs=True)]
+
+    hist_meta_data = {}
+    desc = "Gen Matched Electrons"
+    hists_genmatch = HistTools.create_histcoll(tag="GenMatch",cutbins=cutbins,desc=desc,meta_data=hist_meta_data)
+    desc = "Gen Matched Electrons with Pixel Match"
+    hists_genmatch_seed = HistTools.create_histcoll(tag="GenMatchSeed",cutbins=cutbins,desc=desc,meta_data=hist_meta_data)
+    desc = "Gen Matched Electrons with GsfTrack"
+    hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="GenMatchTrk",cutbins=cutbins,desc=desc,meta_data=hist_meta_data)
     
     for event_nr,event in enumerate(events):
         if event_nr%500==0:
@@ -60,6 +64,8 @@ def make_val_hists(in_filenames,out_name,norm_to=None):
 #    HistTools.make_effhists_fromcoll(numer=hists_genmatch_trk,denom=hists_eb_genmatch,tag="Trk",dir_=out_file,out_hists = eff_hists)                
  #   HistTools.make_effhists_fromcoll(numer=hists_genmatch_seed,denom=hists_eb_genmatch,tag="Seed",dir_=out_file,out_hists = eff_hists)
     out_file.Write()
+    with open(out_name.replace(".root",".json"),'w') as f:
+        json.dump(hist_meta_data,f)
             
     return event.size()
          #   print(GenTools.genparts_to_str(evtdata.get("genparts"),-1))
@@ -259,5 +265,6 @@ if __name__ == "__main__":
     make_val_hists(ref_filenames,out_ref)
     make_val_hists(tar_filenames,out_tar)
 
-    compare_hists(tar_filename=out_tar,ref_filename=out_ref,out_dir=args.out_dir)
-    
+#    compare_hists(tar_filename=out_tar,ref_filename=out_ref,out_dir=args.out_dir)
+
+    compare_hists_indx(tar_filename=out_tar,ref_filename=out_ref,out_dir=args.out_dir)
