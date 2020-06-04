@@ -27,13 +27,12 @@ def make_val_hists(in_filenames,out_name,norm_to=None):
 
     out_file = ROOT.TFile(out_name,"RECREATE")
 
-    hists_eb_genmatch = HistTools.create_histcoll(is_barrel=True,tag="EBGenMatch")
-    hists_ee_genmatch = HistTools.create_histcoll(is_barrel=False,tag="EEGenMatch")
+    cutbins = [HistTools.CutBin("et()","Et",[20,50,100]),
+               HistTools.CutBin("eta()","Eta",[0,1.4442,1.57,2.5,3.0],do_abs=True)]
     
-    hists_eb_genmatch_seed = HistTools.create_histcoll(is_barrel=True,tag="EBGenMatchSeed")
-    hists_ee_genmatch_seed = HistTools.create_histcoll(is_barrel=False,tag="EEGenMatchSeed")
-    hists_eb_genmatch_trk = HistTools.create_histcoll(is_barrel=True,add_gsf=True,tag="EBGenMatchTrk")
-    hists_ee_genmatch_trk = HistTools.create_histcoll(is_barrel=False,add_gsf=True,tag="EEGenMatchTrk")
+    hists_genmatch = HistTools.create_histcoll(tag="GenMatch",cutbins=cutbins)
+    hists_genmatch_seed = HistTools.create_histcoll(tag="EBGenMatchSeed",cutbins=cutbins)
+    hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="EEGenMatchTrk",cutbins=cutbins)
     
     for event_nr,event in enumerate(events):
         if event_nr%500==0:
@@ -44,17 +43,11 @@ def make_val_hists(in_filenames,out_name,norm_to=None):
             gen_match = GenTools.match_to_gen(egobj.eta(),egobj.phi(),evtdata.handles.genparts.product(),pid=11)[0]
             if gen_match:
                 gen_pt = gen_match.pt()
-                hists_eb_genmatch.fill(egobj,weight)
-                hists_ee_genmatch.fill(egobj,weight)
-                    
+                hists_genmatch.fill(egobj,weight)
                 if not egobj.seeds().empty():
-                    hists_eb_genmatch_seed.fill(egobj,weight)
-                    hists_ee_genmatch_seed.fill(egobj,weight)
-                
+                    hists_genmatch_seed.fill(egobj,weight)
                 if not egobj.gsfTracks().empty():                    
-                    hists_eb_genmatch_trk.fill(egobj,weight)
-                    hists_ee_genmatch_trk.fill(egobj,weight)
-
+                    hists_genmatch_trk.fill(egobj,weight)
                 else:
                     gen_pt = -1
 
@@ -64,10 +57,8 @@ def make_val_hists(in_filenames,out_name,norm_to=None):
     
     out_file.cd()
     eff_hists = []
-    HistTools.make_effhists_fromcoll(numer=hists_eb_genmatch_trk,denom=hists_eb_genmatch,tag="EBTrk",dir_=out_file,out_hists = eff_hists)
-    HistTools.make_effhists_fromcoll(numer=hists_ee_genmatch_trk,denom=hists_ee_genmatch,tag="EETrk",dir_=out_file,out_hists = eff_hists)
-    HistTools.make_effhists_fromcoll(numer=hists_eb_genmatch_seed,denom=hists_eb_genmatch,tag="EBSeed",dir_=out_file,out_hists = eff_hists)
-    HistTools.make_effhists_fromcoll(numer=hists_ee_genmatch_seed,denom=hists_ee_genmatch,tag="EESeed",dir_=out_file,out_hists = eff_hists)
+#    HistTools.make_effhists_fromcoll(numer=hists_genmatch_trk,denom=hists_eb_genmatch,tag="Trk",dir_=out_file,out_hists = eff_hists)                
+ #   HistTools.make_effhists_fromcoll(numer=hists_genmatch_seed,denom=hists_eb_genmatch,tag="Seed",dir_=out_file,out_hists = eff_hists)
     out_file.Write()
             
     return event.size()
@@ -265,8 +256,8 @@ if __name__ == "__main__":
     out_ref = os.path.join(args.out_dir,"ref.root")
     out_tar = os.path.join(args.out_dir,"tar.root")
 
-  #  nr_ref = make_val_hists(ref_filenames,out_ref)
-  #  make_val_hists(tar_filenames,out_tar,norm_to=nr_ref)
+    make_val_hists(ref_filenames,out_ref)
+    make_val_hists(tar_filenames,out_tar)
 
     compare_hists(tar_filename=out_tar,ref_filename=out_ref,out_dir=args.out_dir)
     
