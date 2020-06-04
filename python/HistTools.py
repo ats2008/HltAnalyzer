@@ -148,7 +148,7 @@ class HistColl:
         md_dict['hists'] = []
     
         for hist in self.hists:
-            md_dict['hists'].append(hist.get_hist_data())
+            md_dict['hists'].extend(hist.get_hist_data())
         return md_dict
             
 def create_histcoll(add_gsf=False,tag="",label="",desc="",cutbins=None,meta_data=None):

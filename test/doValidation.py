@@ -91,8 +91,12 @@ def set_style_att(hist,color=None,line_width=None,marker_style=None,line_style=N
             
         
 def plot_with_ratio(numer,denom,div_opt=""):
-    numer_label = "ref"
-    denom_label = "tar"
+    numer_label = "tar"
+    denom_label = "ref"
+
+    set_style_att(numer,color=2,marker_style=4)
+    set_style_att(denom,color=4,marker_style=8)
+
     ROOT.gStyle.SetOptStat(0)
     c1 = ROOT.TCanvas("c1","c1",900,750)
     c1.cd()
@@ -142,7 +146,7 @@ def plot_with_ratio(numer,denom,div_opt=""):
     spectrum_pad.cd()
     return c1,spectrum_pad,ratio_pad,ratio_hist,leg
 
-def gen_html(canvases_to_draw):
+def gen_html(canvases_to_draw,html_body=None):
     
     html_str="""
 <!DOCTYPE html>
@@ -180,7 +184,11 @@ def gen_html(canvases_to_draw):
     }});"""
     
     canvas_draw_str = "".join([canvas_draw_str_base.format(name=c) for c in canvases_to_draw])
-    canvas_pad_str = "".join([canvas_pad_str_base.format(name=c) for c in canvases_to_draw])
+    if html_body==None:
+        canvas_pad_str = "".join([canvas_pad_str_base.format(name=c) for c in canvases_to_draw])
+    else:
+        canvas_pad_str = "\n".join(html_body)
+    
     
     return html_str.format(canvas_draw_js=canvas_draw_str,canvas_pads=canvas_pad_str)
 
@@ -220,6 +228,46 @@ def compare_hists(ref_filename,tar_filename,tar_label="target",ref_label="refere
             print("ref hist",key.GetName(),"not found")
 
     html_str = gen_html(canvases_to_draw)
+    with open(os.path.join(out_dir,"index.html"),'w') as f:
+        f.write(html_str)
+
+def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="reference",out_dir="./"):
+    
+    tar_file = ROOT.TFile.Open(tar_filename)
+    ref_file = ROOT.TFile.Open(ref_filename)
+
+    with open(tar_filename.replace(".root",".json")) as f:
+        index = json.load(f)
+    
+    out_file = ROOT.TFile.Open(os.path.join(out_dir,"output.root"),"RECREATE")
+    canvases_to_draw=[]
+
+    html_body = []
+    for collname,coll in index.iteritems():
+        html_body.append(coll['desc'])
+        hists_sorted = sorted(coll['hists'],key=lambda k: k['name'])
+        for hist_data in hists_sorted:
+            #unicode strings fun...hence the str()
+            hist_name = str(hist_data['name'])
+
+            tar_hist = tar_file.Get(hist_name)
+            ref_hist = ref_file.Get(hist_name)
+            if ref_hist:
+            
+                res = plot_with_ratio(tar_hist,ref_hist,"")
+                c1 = res[0]
+                c1.Update()
+                canvas_name = "{}Canvas".format(hist_name)
+                c1.Write(canvas_name)
+                canvases_to_draw.append(canvas_name)
+                html_body.append('<div id="{name}" style="width:800px; height:600px"></div>'.format(name=canvas_name))
+                for suffex in [".C",".png"]:
+                    c1.Print(os.path.join(out_dir,"{}{}".format(hist_name,suffex)))
+             
+            else:
+                print("ref hist",hist_name,"not found")
+
+    html_str = gen_html(canvases_to_draw,html_body)
     with open(os.path.join(out_dir,"index.html"),'w') as f:
         f.write(html_str)
 
