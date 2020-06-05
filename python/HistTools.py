@@ -66,7 +66,8 @@ class VarHistBinned:
             
 
     def __init__(self,cutbins,*args,**kwargs):
-        self.cutbins = cutbins
+        #we remove the cuts on the variable we are plotting
+        self.cutbins = [cb for cb in cutbins if cb.var_func!=args[0]]
         self.hists = []
         #kinda buggy getting the name from the args,kwargs, should fix
         if "name" in kwargs:
