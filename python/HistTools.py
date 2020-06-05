@@ -68,6 +68,11 @@ class VarHistBinned:
     def __init__(self,cutbins,*args,**kwargs):
         self.cutbins = cutbins
         self.hists = []
+        #kinda buggy getting the name from the args,kwargs, should fix
+        if "name" in kwargs:
+            self.name = kwargs["name"]
+        else:
+            self.name = args[1]
         self.init_hists(self.hists,self.cutbins,"",[],*args,**kwargs)
         
     def _fill(self,obj,hists,cutbins,weight=1.):
@@ -145,10 +150,10 @@ class HistColl:
     def get_metadata_dict(self):
         md_dict = dict(self.metadata.__dict__)
         print(md_dict)
-        md_dict['hists'] = []
+        md_dict['hists'] = {}
     
         for hist in self.hists:
-            md_dict['hists'].extend(hist.get_hist_data())
+            md_dict['hists'][hist.name]=hist.get_hist_data()
         return md_dict
             
 def create_histcoll(add_gsf=False,tag="",label="",desc="",cutbins=None,meta_data=None):

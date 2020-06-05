@@ -90,7 +90,7 @@ def set_style_att(hist,color=None,line_width=None,marker_style=None,line_style=N
         hist.SetMarkerSize(marker_size)
             
         
-def plot_with_ratio(numer,denom,div_opt=""):
+def plot_with_ratio(numer,denom,div_opt="",hist_data={}):
     numer_label = "tar"
     denom_label = "ref"
 
@@ -103,7 +103,6 @@ def plot_with_ratio(numer,denom,div_opt=""):
     spectrum_pad = ROOT.TPad("spectrumPad","newpad",0.01,0.30,0.99,0.99)
     spectrum_pad.Draw() 
     spectrum_pad.cd()
-    spectrum_pad.SetGridx()
     xaxis_title = denom.GetXaxis().GetTitle()
     denom.GetXaxis().SetTitle()
     denom.Draw("EP")
@@ -114,11 +113,26 @@ def plot_with_ratio(numer,denom,div_opt=""):
     leg.SetBorderSize(0)
     leg.SetFillStyle(0)
     leg.Draw()
+
+    labels = []    
+    for cut_nr,cut_label in enumerate(hist_data['cut_labels']):
+        y_max = 0.882-0.06*cut_nr
+        y_min = 0.882-0.06*(cut_nr+1)
+        label = ROOT.TPaveLabel(0.681,y_min,0.894,y_max,cut_label,"brNDC")
+        label.SetFillStyle(0)
+        label.SetBorderSize(0)
+        label.SetTextFont(42)
+        label.SetTextAlign(12);
+        label.SetTextSize(0.657895);
+        label.Draw()
+        labels.append(label)
+
     
     c1.cd()
     ratio_pad = ROOT.TPad("ratioPad", "newpad",0.01,0.01,0.99,0.33)
     ratio_pad.Draw()
     ratio_pad.cd()
+    ratio_pad.SetGridy()
     ratio_pad.SetTopMargin(0.05)
     ratio_pad.SetBottomMargin(0.3)
     ratio_pad.SetFillStyle(0)
@@ -144,7 +158,7 @@ def plot_with_ratio(numer,denom,div_opt=""):
     
     ratio_hist.Draw("EP")
     spectrum_pad.cd()
-    return c1,spectrum_pad,ratio_pad,ratio_hist,leg
+    return c1,spectrum_pad,ratio_pad,ratio_hist,leg,labels
 
 def gen_html(canvases_to_draw,html_body=None):
     
@@ -245,28 +259,30 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
     html_body = []
     for collname,coll in index.iteritems():
         html_body.append(coll['desc'])
-        hists_sorted = sorted(coll['hists'],key=lambda k: k['name'])
-        for hist_data in hists_sorted:
-            #unicode strings fun...hence the str()
-            hist_name = str(hist_data['name'])
+        html_body.append("<br><br>")
+        for histbin_name,histbin_data in coll['hists'].iteritems():
+            hists_sorted = sorted(histbin_data,key=lambda k: k['name'])
+            for hist_data in hists_sorted:
+                #unicode strings fun...hence the str()
+                hist_name = str(hist_data['name'])
 
-            tar_hist = tar_file.Get(hist_name)
-            ref_hist = ref_file.Get(hist_name)
-            if ref_hist:
+                tar_hist = tar_file.Get(hist_name)
+                ref_hist = ref_file.Get(hist_name)
+                if ref_hist:
             
-                res = plot_with_ratio(tar_hist,ref_hist,"")
-                c1 = res[0]
-                c1.Update()
-                canvas_name = "{}Canvas".format(hist_name)
-                c1.Write(canvas_name)
-                canvases_to_draw.append(canvas_name)
-                html_body.append('<div id="{name}" style="width:800px; height:600px"></div>'.format(name=canvas_name))
-                for suffex in [".C",".png"]:
-                    c1.Print(os.path.join(out_dir,"{}{}".format(hist_name,suffex)))
+                    res = plot_with_ratio(tar_hist,ref_hist,"",hist_data)
+                    c1 = res[0]
+                    c1.Update()
+                    canvas_name = "{}Canvas".format(hist_name)
+                    c1.Write(canvas_name)
+                    canvases_to_draw.append(canvas_name)
+                    html_body.append('<div id="{name}" style="width:800px; height:600px; display:inline-block"></div>'.format(name=canvas_name))
+                    for suffex in [".C",".png"]:
+                        c1.Print(os.path.join(out_dir,"{}{}".format(hist_name,suffex)))
              
-            else:
-                print("ref hist",hist_name,"not found")
-
+                else:
+                    print("ref hist",hist_name,"not found")
+            html_body.append("<br><br>")
     html_str = gen_html(canvases_to_draw,html_body)
     with open(os.path.join(out_dir,"index.html"),'w') as f:
         f.write(html_str)
