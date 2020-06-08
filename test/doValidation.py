@@ -16,31 +16,29 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
 
-def make_val_hists(in_filenames,out_name,norm_to=None):
+def make_val_hists(in_filenames,out_name):
     evtdata = EvtData(phaseII_products,verbose=True)
 
     events = Events(in_filenames)
-
-    weight = 1.
-    if norm_to:
-        weight = norm_to/events.size()
-
+    nr_events = events.size()
     out_file = ROOT.TFile(out_name,"RECREATE")
 
-    cutbins = [HistTools.CutBin("et()","Et",[20,50,100]),
+    weight = 1.
+
+    cutbins = [HistTools.CutBin("et()","Et",[20,100]),
                HistTools.CutBin("eta()","Eta",[0,1.4442,None,1.57,2.5,3.0],do_abs=True)]
 
     hist_meta_data = {}
     desc = "Gen Matched Electrons"
-    hists_genmatch = HistTools.create_histcoll(tag="GenMatch",cutbins=cutbins,desc=desc,meta_data=hist_meta_data)
+    hists_genmatch = HistTools.create_histcoll(tag="GenMatch",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
     desc = "Gen Matched Electrons with Pixel Match"
-    hists_genmatch_seed = HistTools.create_histcoll(tag="GenMatchSeed",cutbins=cutbins,desc=desc,meta_data=hist_meta_data)
+    hists_genmatch_seed = HistTools.create_histcoll(tag="GenMatchSeed",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
     desc = "Gen Matched Electrons with GsfTrack"
-    hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="GenMatchTrk",cutbins=cutbins,desc=desc,meta_data=hist_meta_data)
+    hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="GenMatchTrk",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
     
     for event_nr,event in enumerate(events):
         if event_nr%500==0:
-            print("processing event {} / {}".format(event_nr,events.size()))
+            print("processing event {} / {}".format(event_nr,nr_events))
         evtdata.get_handles(event)
         for egobj in evtdata.get("egtrigobjs"):
 
@@ -61,13 +59,15 @@ def make_val_hists(in_filenames,out_name,norm_to=None):
     
     out_file.cd()
     eff_hists = []
-#    HistTools.make_effhists_fromcoll(numer=hists_genmatch_trk,denom=hists_eb_genmatch,tag="Trk",dir_=out_file,out_hists = eff_hists)                
- #   HistTools.make_effhists_fromcoll(numer=hists_genmatch_seed,denom=hists_eb_genmatch,tag="Seed",dir_=out_file,out_hists = eff_hists)
+    desc = "GsfTrack Match w.r.t Gen Efficiency"
+    HistTools.make_effhists_fromcoll(numer=hists_genmatch_trk,denom=hists_genmatch,tag="Trk",dir_=out_file,out_hists = eff_hists,desc=desc,meta_data=hist_meta_data)                
+    desc = "Pixel Match w.r.t Gen Efficiency"
+    HistTools.make_effhists_fromcoll(numer=hists_genmatch_seed,denom=hists_genmatch,tag="Seed",dir_=out_file,out_hists = eff_hists,desc=desc,meta_data=hist_meta_data)
     out_file.Write()
     with open(out_name.replace(".root",".json"),'w') as f:
         json.dump(hist_meta_data,f)
             
-    return event.size()
+    
          #   print(GenTools.genparts_to_str(evtdata.get("genparts"),-1))
             #for genpart in evtdata.get("genparts"):
                 #for mo in range(0,genpart.numberOfMothers()):
@@ -251,13 +251,15 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
     ref_file = ROOT.TFile.Open(ref_filename)
 
     with open(tar_filename.replace(".root",".json")) as f:
-        index = json.load(f)
+        tar_index = json.load(f)
+    with open(ref_filename.replace(".root",".json")) as f:
+        ref_index = json.load(f)
     
     out_file = ROOT.TFile.Open(os.path.join(out_dir,"output.root"),"RECREATE")
     canvases_to_draw=[]
 
-    html_body = []
-    for collname,coll in index.iteritems():
+    html_body = ["Egamma Validation page<br>Note this is an interactive webpage and will take a few moments to load<br><br>"]
+    for collname,coll in tar_index.iteritems():
         html_body.append(coll['desc'])
         html_body.append("<br><br>")
         for histbin_name,histbin_data in coll['hists'].iteritems():
@@ -269,7 +271,13 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
                 tar_hist = tar_file.Get(hist_name)
                 ref_hist = ref_file.Get(hist_name)
                 if ref_hist:
-            
+                    if coll['is_normable']:
+                        try:
+                            tar_weight = ref_index[collname]['norm_val']/coll['norm_val']
+                        except:
+                            tar_weight = 1.
+                        tar_hist.Scale(tar_weight)
+                    
                     res = plot_with_ratio(tar_hist,ref_hist,"",hist_data)
                     c1 = res[0]
                     c1.Update()
