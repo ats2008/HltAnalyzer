@@ -88,11 +88,42 @@ def set_style_att(hist,color=None,line_width=None,marker_style=None,line_style=N
         hist.SetMarkerStyle(marker_style)
     if marker_size!=None:
         hist.SetMarkerSize(marker_size)
+
+
+def adjust_yaxis_dist(hist1,hist2):
+    max_val = max(hist1.GetMaximum(),hist2.GetMaximum())
+    hist1.GetYaxis().SetRangeUser(0.1,max_val*1.3)
+    
+def adjust_yaxis_eff(hist1,hist2):
+    max_val = max(hist1.GetMaximum(),hist2.GetMaximum())
+    min_val = min(hist1.GetMinimum(),hist2.GetMinimum())
+    print(min_val,max_val)
+
+    if min_val>0.95:
+        y_min = 0.9
+        y_max = 1.05
+    elif min_val>0.85:
+        y_min = 0.8
+        y_max = 1.1
+    elif min_val>0.75:
+        y_min = 0.7
+        y_max = 1.2
+    elif min_val>0.6:
+        y_min = 0.5
+        y_max = 1.2
+    else:
+        y_min = 0
+        y_max = 1.3
+    hist1.GetYaxis().SetRangeUser(y_min,y_max)
+    
+def adjust_yaxis(hist1,hist2,is_eff=False):
+    if is_eff:
+        adjust_yaxis_eff(hist1,hist2)
+    else:
+        adjust_yaxis_dist(hist1,hist2)
+
             
-        
-def plot_with_ratio(numer,denom,div_opt="",hist_data={}):
-    numer_label = "tar"
-    denom_label = "ref"
+def plot_with_ratio(numer,numer_label,denom,denom_label,div_opt="",hist_data={}):
 
     set_style_att(numer,color=2,marker_style=4)
     set_style_att(denom,color=4,marker_style=8)
@@ -228,7 +259,7 @@ def compare_hists(ref_filename,tar_filename,tar_label="target",ref_label="refere
             ref_hist.SetLineColor(4)
             ref_hist.SetMarkerStyle(8)
             ref_hist.SetMarkerColor(4)
-            res = plot_with_ratio(tar_hist,ref_hist,"")
+            res = plot_with_ratio(tar_hist,tar_label,ref_hist,ref_label,"")
             c1 = res[0]
             c1.Update()
             canvas_name = "{}Canvas".format(key.GetName())
@@ -258,11 +289,11 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
     out_file = ROOT.TFile.Open(os.path.join(out_dir,"output.root"),"RECREATE")
     canvases_to_draw=[]
 
-    html_body = ["Egamma Validation page<br>Note this is an interactive webpage and will take a few moments to load<br><br>"]
+    html_body = ["<h1>Egamma Validation page</h1>Note this is an interactive webpage and will take a few moments to load<br><br>"]
     for collname,coll in tar_index.iteritems():
-        html_body.append(coll['desc'])
-        html_body.append("<br><br>")
+        html_body.append("<h2>{}</h2>".format(coll['desc']))
         for histbin_name,histbin_data in coll['hists'].iteritems():
+            html_body.append("<h3>{} : {}</h3>".format(coll['desc'],histbin_name))
             hists_sorted = sorted(histbin_data,key=lambda k: k['name'])
             for hist_data in hists_sorted:
                 #unicode strings fun...hence the str()
@@ -278,7 +309,8 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
                             tar_weight = 1.
                         tar_hist.Scale(tar_weight)
                     
-                    res = plot_with_ratio(tar_hist,ref_hist,"",hist_data)
+                    adjust_yaxis(ref_hist,tar_hist,coll['is_effhist'])
+                    res = plot_with_ratio(tar_hist,tar_label,ref_hist,ref_label,"",hist_data)
                     c1 = res[0]
                     c1.Update()
                     canvas_name = "{}Canvas".format(hist_name)
@@ -316,7 +348,8 @@ if __name__ == "__main__":
     parser.add_argument('--tar_prefix',default='file:',help='file prefix')
     parser.add_argument('--ref_prefix',default='file:',help='file prefix')
     parser.add_argument('--out_dir','-o',default="./",help='output dir')
-
+    parser.add_argument('--tar_label',default="tar",help="target label for leg")
+    parser.add_argument('--ref_label',default="ref",help="reference label for leg")
     args = parser.parse_args()
 
  
@@ -334,9 +367,11 @@ if __name__ == "__main__":
     out_ref = os.path.join(args.out_dir,"ref.root")
     out_tar = os.path.join(args.out_dir,"tar.root")
 
-    make_val_hists(ref_filenames,out_ref)
-    make_val_hists(tar_filenames,out_tar)
+  #  make_val_hists(ref_filenames,out_ref)
+  #  make_val_hists(tar_filenames,out_tar)
 
 #    compare_hists(tar_filename=out_tar,ref_filename=out_ref,out_dir=args.out_dir)
 
-    compare_hists_indx(tar_filename=out_tar,ref_filename=out_ref,out_dir=args.out_dir)
+    compare_hists_indx(tar_filename=out_tar,ref_filename=out_ref,
+                       tar_label=args.tar_label,ref_label=args.ref_label,
+                       out_dir=args.out_dir)
