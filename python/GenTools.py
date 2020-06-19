@@ -125,7 +125,7 @@ class EvtWeights:
         else:
             if dataset_name not in self.warned:
                 self.warned.append(dataset_name) 
-                print "{} not in weights file, returning weight 1".format(dataset_name)
+                print("{} not in weights file, returning weight 1".format(dataset_name))
             return 1.
 
     def weight_from_evt(self,event):
