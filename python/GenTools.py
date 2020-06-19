@@ -99,7 +99,36 @@ def match_to_gen(eta,phi,genparts,pid=11,antipart=True,max_dr=0.1,status=PartSta
             best_dr2 = dr2
     return best_match,best_dr2
 
-  
+class EvtWeights:
+    """ 
+    class reads in a weights file and determines from the file the event is in
+    what the weight should be 
+    
+    usage: 
+    weights = EvtWeights("weights_file")
+    weight = weights.weight_from_evt(event.object())
+    """
 
+    def __init__(self,input_filename,lumi=0.075):
+        if input_filename: 
+            with open(input_filename,'r') as f:
+                self.data = json.load(f)
+        else:
+            self.data = {}            
+        self.warned = []
+        self.lumi = lumi #luminosity to weight to in pb
 
+    def weight_from_name(self,dataset_name):
+        if dataset_name in self.data:
+            val = self.data[dataset_name]
+            return val['xsec']/val['nrtot']*self.lumi
+        else:
+            if dataset_name not in self.warned:
+                self.warned.append(dataset_name) 
+                print "{} not in weights file, returning weight 1".format(dataset_name)
+            return 1.
 
+    def weight_from_evt(self,event):
+        filename = event.getTFile().GetName().split("/")[-1]
+        dataset_name = re.search(r'(.+)(_\d+_EDM.root)',filename).groups()[0]
+        return self.weight_from_name(dataset_name)
