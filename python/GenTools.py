@@ -51,7 +51,7 @@ def get_lastcopy_prefsr(part):
         return part
     
 def get_lastcopy(part):
-    for daughter in genpart.daughterRefVector():
+    for daughter in part.daughterRefVector():
         if daughter.pdgId() == part.pdgId():
             return get_lastcopy(daughter)
     return part
@@ -72,7 +72,7 @@ def get_genparts(genparts,pid=11,antipart=True,status=PartStatus.PREFSR):
                     selected.append(part)
                 elif status == PartStatus.PREFSR:
                     selected.append(get_lastcopy_prefsr(part))
-                elif PartStatus.FINAL:
+                elif status == PartStatus.FINAL:
                     selected.append(get_lastcopy(part))
                 else:
                     raise RuntimeError("error status {} not implimented".format(status))
