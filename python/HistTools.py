@@ -186,15 +186,31 @@ class HistColl:
             md_dict['hists'][hist.basename]=hist.get_hist_data()
         return md_dict
             
+    
+
 def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=None,meta_data=None):
     hist_coll = HistColl("{tag}Hist".format(tag=tag),label=label,desc=desc,norm_val=norm_val,cutbins=cutbins)
     hist_coll.add_hist("et()","et",";E_{T} [GeV];entries",20,0,100)
     hist_coll.add_hist("eta()","eta",";#eta;entries",60,-3,3)
     hist_coll.add_hist("phi()","phi",";#phi [rad];entries",64,-3.2,3.2)
 
+    hist_coll.add_hist('var("hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)',"sigmaIEtaIEta",";#sigma_{i#etai#eta};entries",100,0,0.4)
+    hist_coll.add_hist('var("hltEgammaEcalPFClusterIsoUnseeded",0)',"ecalPFClusIso",";ecal pf clus isol [GeV];entries",100,0,20)
+    hist_coll.add_hist('var("hltEgammaHcalPFClusterIsoUnseeded",0)',"hcalPFClusIso",";hcal pf clus isol [GeV];entries",100,0,20)
+    hist_coll.add_hist('var("hltEgammaHGCalPFClusterIsoUnseeded",0)',"hgcalPFClusIso",";hgcal pf clus isol [GeV];entries",100,0,20)
+    hist_coll.add_hist('var("hltEgammaHoverEUnseeded",0)',"hForHOverE",";H for H/E [GeV];entries",100,0,20)
+    hist_coll.add_hist('var("hltEgammaPixelMatchVarsUnseeded_s2,0)',"pmS2","PM S2",100,0,100)
+    
     if add_gsf:
         hist_coll.add_hist("gsfTracks().at(0).pt()","gsfTrkPt",";GsfTrk p_{T} [GeV];entries",20,0,100)
-    
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Chi2")',"gsfChi2","Gsf Track #Chi^{2}",100,0,100)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_DetaSeed")',"deltaEtaInSeed","#Delta#eta_{in}^{seed}",100,0,0.02)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Dphi")',"deltaPhiIn","#Delta#phi_{in}",100,0,0.1)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_MissingHits")',"missHits","#miss hits",5,-0.5,4.5)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_ValidHits")',"validHits","#miss hits",21,-0.5,20.5)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP")',"invEminusInvP","1/E - 1/p",100,-5,5)
+        
+        
     if meta_data!=None:
         meta_data[tag] = hist_coll.get_metadata_dict()
     return hist_coll
