@@ -53,7 +53,13 @@ def call_func_nochain(obj,func_str):
     if re_res:
         func_name = re_res.group(1)
         args = convert_args(re_res.group(3).split(","))
-        return getattr(obj,func_name)(*args)
+        try:
+            return getattr(obj,func_name)(*args)
+        except ValueError as err: 
+            #much easier in python3, small hack here for 2.7
+            err.message = "for function '{}' with args {}\n {}".format(func_name,str(args),err.message)
+            err.args = (err.message,) + err.args[1:] 
+            raise err
 
     raise RuntimeError("function string {} could not be resolved".format(func_str))
 
