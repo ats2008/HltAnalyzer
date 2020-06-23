@@ -70,3 +70,13 @@ def call_func(obj,func_str):
     for sub_func in sub_funcs:
         res = call_func_nochain(res,sub_func)
     return res
+
+def get_filenames(input_filenames,prefix=""):
+    output_filenames = []
+    for filename in input_filenames:
+        if not filename.endswith(".root"):
+            with open(filename) as f:
+                output_filenames.extend(['{}{}'.format(prefix,l.rstrip()) for l in f])
+        else:
+            output_filenames.append('{}{}'.format(prefix,filename))
+    return output_filenames
