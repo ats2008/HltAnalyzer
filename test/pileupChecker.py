@@ -30,6 +30,7 @@ if __name__ == "__main__":
     
     uniq_pu_evts = {}
     nr_dup_evts = 0
+    nr_uniq_evts = 0
     for eventnr,event in enumerate(events):
         if eventnr%1000==0:
             print("processing {} / {}".format(eventnr,events.size()))
@@ -46,8 +47,9 @@ if __name__ == "__main__":
                 if evt_id.event() in uniq_pu_evts[evt_id.luminosityBlock()]:
                     nr_dup_evts += 1
                 else:
+                    nr_uniq_evts +=1
                     uniq_pu_evts[evt_id.luminosityBlock()].add(evt_id.event())
 
     expect_uniq_evts = events.size()*200*7
 
-    print("number of events",events.size(),"number of unique PU events",len(uniq_pu_evts)," expected unique events",expect_uniq_evts," number dups ",nr_dup_evts)
+    print("number of events",events.size(),"number of unique PU events",nr_uniq_evts," expected unique events",expect_uniq_evts," number dups ",nr_dup_evts)
