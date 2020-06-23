@@ -18,15 +18,34 @@ class EvtHandles:
                 print("adding handle {name}, {type}, {tag}".format(**product))
             setattr(self,product['name'],HandleData(product['type'],product['tag']))
     
-
-    
 class EvtData:
     def __init__(self,products=[],verbose=False):
         self.handles = EvtHandles(products,verbose)
-    def get_handles(self,event):
-        for name,handle in vars(self.handles).iteritems():            
-            handle.get(event)
+        self.event = None
+        self.got_handles = []
+
+    def get_handles(self,event,on_demand=True):
+        """ 
+        gets the handles for the event
+        if on_demand=True it doesnt actually get the handles and instead
+        waits for something to request the handle
+        """ 
+        self.got_handles = []
+        self.event = event
+        if not on_demand:
+            for name,handle in vars(self.handles).iteritems():            
+                handle.get(event)
+                self.got_handles.append(name)
+ 
     def get(self,name):
+        """ 
+        gets the product with name "name"
+        now checks to ensure the handles are got first and not gets them
+        """ 
+                
+        if not name in self.got_handles:
+            getattr(self.handles,name).get(self.event)
+            self.got_handles.append(name)
         try:
             return getattr(self.handles,name).product()
         except RuntimeError:
