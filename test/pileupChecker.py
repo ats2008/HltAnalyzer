@@ -8,10 +8,6 @@ from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products,
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 
-def make_id_tupl(evt_id):
-    return (evt_id.run(),evt_id.luminosityBlock(),evt_id.event())
-
-
 if __name__ == "__main__":
     
     CoreTools.load_fwlitelibs()
@@ -19,6 +15,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='example e/gamma HLT analyser')
     parser.add_argument('in_filename',nargs="+",help='input filename')
     parser.add_argument('--prefix','-p',default='file:',help='file prefix')
+    parser.add_argument('--maxevents','-n',default=-1,help='max events, <0 is no limit')
+    parser.add_argument
     args = parser.parse_args()
 
     products = []
@@ -31,11 +29,16 @@ if __name__ == "__main__":
     uniq_pu_evts = {}
     nr_dup_evts = 0
     nr_uniq_evts = 0
+    expect_uniq_evts = 0
     for eventnr,event in enumerate(events):
         if eventnr%1000==0:
-            print("processing {} / {}".format(eventnr,events.size()))
-        if eventnr>10000:
+            expect_uniq_evts = eventnr*200*7
+            print("number of events",eventnr,"number of unique PU events",nr_uniq_evts," expected unique events",expect_uniq_evts," number dups ",nr_dup_evts)
+
+        if args.maxevents>0 and eventnr>args.maxevents:
             break
+
+
         evtdata.get_handles(event)
         pu_sum  = evtdata.get("pu_sum")
         for pu_bx in pu_sum:
@@ -50,6 +53,6 @@ if __name__ == "__main__":
                     nr_uniq_evts +=1
                     uniq_pu_evts[evt_id.luminosityBlock()].add(evt_id.event())
 
-    expect_uniq_evts = events.size()*200*7
+
 
     print("number of events",events.size(),"number of unique PU events",nr_uniq_evts," expected unique events",expect_uniq_evts," number dups ",nr_dup_evts)
