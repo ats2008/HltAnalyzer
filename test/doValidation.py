@@ -203,7 +203,7 @@ def gen_html(canvases_to_draw,html_body=None):
  
 <title>E/gamma Validation</title>
  
-<script src="scripts/JSRootCore.js" type="text/javascript"></script>
+<script src="https://root.cern/js/latest/scripts/JSRootCore.js" type="text/javascript"></script>
  
 <script type='text/javascript'> 
   var filename = "output.root";
@@ -367,8 +367,8 @@ if __name__ == "__main__":
     out_ref = os.path.join(args.out_dir,"ref.root")
     out_tar = os.path.join(args.out_dir,"tar.root")
 
-  #  make_val_hists(ref_filenames,out_ref)
-  #  make_val_hists(tar_filenames,out_tar)
+#    make_val_hists(ref_filenames,out_ref)
+#    make_val_hists(tar_filenames,out_tar)
 
 #    compare_hists(tar_filename=out_tar,ref_filename=out_ref,out_dir=args.out_dir)
 
