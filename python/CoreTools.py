@@ -39,8 +39,8 @@ def convert_args(input_args):
 
 def call_func_nochain(obj,func_str):
     #first check if it is just a property 
-    if func_str.isalnum():
-        return (obj,func_name)
+    if func_str.replace("_","").isalnum(): #basically allows "_" but not other non alphanumerica charactor
+        return getattr(obj,func_str)
 
     #okay is it a function
     re_res = re.search(r'([\w]+)(\(\)\Z)',func_str)
