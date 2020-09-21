@@ -16,65 +16,6 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
 
-def make_val_hists(in_filenames,out_name):
-    evtdata = EvtData(phaseII_products,verbose=True)
-
-    events = Events(in_filenames)
-    nr_events = events.size()
-    out_file = ROOT.TFile(out_name,"RECREATE")
-
-    weight = 1.
-
-    cutbins = [HistTools.CutBin("et()","Et",[20,100]),
-               HistTools.CutBin("eta()","Eta",[0,1.4442,None,1.57,2.5,3.0],do_abs=True)]
-
-    hist_meta_data = {}
-    desc = "Gen Matched Electrons"
-    hists_genmatch = HistTools.create_histcoll(tag="GenMatch",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
-    desc = "Gen Matched Electrons with Pixel Match"
-    hists_genmatch_seed = HistTools.create_histcoll(tag="GenMatchSeed",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
-    desc = "Gen Matched Electrons with GsfTrack"
-    hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="GenMatchTrk",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
-    
-    for event_nr,event in enumerate(events):
-        if event_nr%500==0:
-            print("processing event {} / {}".format(event_nr,nr_events))
-        evtdata.get_handles(event)
-        for egobj in evtdata.get("egtrigobjs"):
-
-            gen_match = GenTools.match_to_gen(egobj.eta(),egobj.phi(),evtdata.handles.genparts.product(),pid=11)[0]
-            if gen_match:
-                gen_pt = gen_match.pt()
-                hists_genmatch.fill(egobj,weight)
-                if not egobj.seeds().empty():
-                    hists_genmatch_seed.fill(egobj,weight)
-                if not egobj.gsfTracks().empty():                    
-                    hists_genmatch_trk.fill(egobj,weight)
-                else:
-                    gen_pt = -1
-
-        gen_eles = GenTools.get_genparts(evtdata.get("genparts"))
-        if len(gen_eles)!=2:
-            print("event missing electrons",event_nr)
-    
-    out_file.cd()
-    eff_hists = []
-    desc = "GsfTrack Match w.r.t Gen Efficiency"
-    HistTools.make_effhists_fromcoll(numer=hists_genmatch_trk,denom=hists_genmatch,tag="Trk",dir_=out_file,out_hists = eff_hists,desc=desc,meta_data=hist_meta_data)                
-    desc = "Pixel Match w.r.t Gen Efficiency"
-    HistTools.make_effhists_fromcoll(numer=hists_genmatch_seed,denom=hists_genmatch,tag="Seed",dir_=out_file,out_hists = eff_hists,desc=desc,meta_data=hist_meta_data)
-    out_file.Write()
-    with open(out_name.replace(".root",".json"),'w') as f:
-        json.dump(hist_meta_data,f)
-            
-    
-         #   print(GenTools.genparts_to_str(evtdata.get("genparts"),-1))
-            #for genpart in evtdata.get("genparts"):
-                #for mo in range(0,genpart.numberOfMothers()):
-                    #ref = genpart.motherRef(0)
-                    #print("sucess {}".format(ref.pt()))
-              #  print("{} {} {} {} {}".format(genpart.pdgId(),
-                #print("{} {} {} {} {}".format(egobj.pt(),egobj.eta(),egobj.phi(),egobj.gsfTracks()[0].pt(),gen_pt))
 
 def set_style_att(hist,color=None,line_width=None,marker_style=None,line_style=None,marker_size=None):
     if color!=None:
@@ -215,7 +156,8 @@ def gen_html(canvases_to_draw,html_body=None):
 </head>
  
 <body>
-  {canvas_pads}
+
+{canvas_pads}
   
 </body>
  
@@ -229,10 +171,12 @@ def gen_html(canvases_to_draw,html_body=None):
     }});"""
     
     canvas_draw_str = "".join([canvas_draw_str_base.format(name=c) for c in canvases_to_draw])
+    
     if html_body==None:
         canvas_pad_str = "".join([canvas_pad_str_base.format(name=c) for c in canvases_to_draw])
     else:
-        canvas_pad_str = "\n".join(html_body)
+       # canvas_pad_str = "\n".join(html_body)
+        canvas_pad_str = str(html_body)
     
     
     return html_str.format(canvas_draw_js=canvas_draw_str,canvas_pads=canvas_pad_str)
@@ -281,19 +225,19 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
     tar_file = ROOT.TFile.Open(tar_filename)
     ref_file = ROOT.TFile.Open(ref_filename)
 
-    with open(tar_filename.replace(".root",".json")) as f:
-        tar_index = json.load(f)
-    with open(ref_filename.replace(".root",".json")) as f:
-        ref_index = json.load(f)
+    tar_index = json.loads(str(tar_file.meta_data))
+    ref_index = json.loads(str(ref_file.meta_data))
     
     out_file = ROOT.TFile.Open(os.path.join(out_dir,"output.root"),"RECREATE")
     canvases_to_draw=[]
-
-    html_body = ["<h1>Egamma Validation page</h1>Note this is an interactive webpage and will take a few moments to load<br><br>"]
+    toc_str_base = '<br><a href="#{coll}{hist}"><font color=grey>{coll} : {hist}</font></a>&nbsp;'
+    toc = []
+    html_body = ["<h1>Egamma Validation page</h1>Note this is an interactive webpage and will take a few moments to load<br><br>{toc}"]
     for collname,coll in tar_index.iteritems():
         html_body.append("<h2>{}</h2>".format(coll['desc']))
         for histbin_name,histbin_data in coll['hists'].iteritems():
-            html_body.append("<h3>{} : {}</h3>".format(coll['desc'],histbin_name))
+            html_body.append('<h3 id="{coll}{hist}">{coll} : {hist}</h3>'.format(coll=coll['desc'],hist=histbin_name))
+            toc.append(toc_str_base.format(coll=coll['desc'],hist=histbin_name))
             hists_sorted = sorted(histbin_data,key=lambda k: k['name'])
             for hist_data in hists_sorted:
                 #unicode strings fun...hence the str()
@@ -323,7 +267,9 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
                 else:
                     print("ref hist",hist_name,"not found")
             html_body.append("<br><br>")
-    html_str = gen_html(canvases_to_draw,html_body)
+    
+    html_body_str = "\n".join(html_body).format(toc=''.join(toc))
+    html_str = gen_html(canvases_to_draw,html_body_str)
     with open(os.path.join(out_dir,"index.html"),'w') as f:
         f.write(html_str)
 
@@ -343,35 +289,19 @@ if __name__ == "__main__":
     CoreTools.load_fwlitelibs()
 
     parser = argparse.ArgumentParser(description='example e/gamma HLT analyser')
-    parser.add_argument('--ref',nargs="+",help='input filename')
-    parser.add_argument('--tar',nargs="+",help='input filename')
-    parser.add_argument('--tar_prefix',default='file:',help='file prefix')
-    parser.add_argument('--ref_prefix',default='file:',help='file prefix')
+    parser.add_argument('--ref',help='reference filename')
+    parser.add_argument('--tar',help='target filename')
     parser.add_argument('--out_dir','-o',default="./",help='output dir')
     parser.add_argument('--tar_label',default="tar",help="target label for leg")
     parser.add_argument('--ref_label',default="ref",help="reference label for leg")
     args = parser.parse_args()
 
- 
+    ROOT.gROOT.SetBatch()
+
     if not os.path.exists(args.out_dir):
         os.makedirs(args.out_dir)
 
-#    ref_filenames_with_prefix = ['{}{}'.format(args.prefix,x) for x in args.ref]
-#    tar_filenames_with_prefix = ['{}{}'.format(args.prefix,x) for x in args.tar]
 
-    ref_filenames = get_filenames(args.ref,args.ref_prefix)
-    tar_filenames = get_filenames(args.tar,args.tar_prefix)
-
-  
-
-    out_ref = os.path.join(args.out_dir,"ref.root")
-    out_tar = os.path.join(args.out_dir,"tar.root")
-
-#    make_val_hists(ref_filenames,out_ref)
-#    make_val_hists(tar_filenames,out_tar)
-
-#    compare_hists(tar_filename=out_tar,ref_filename=out_ref,out_dir=args.out_dir)
-
-    compare_hists_indx(tar_filename=out_tar,ref_filename=out_ref,
+    compare_hists_indx(tar_filename=args.tar,ref_filename=args.ref,
                        tar_label=args.tar_label,ref_label=args.ref_label,
                        out_dir=args.out_dir)
