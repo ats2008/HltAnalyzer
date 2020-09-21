@@ -41,17 +41,15 @@ def make_val_hists(in_filenames,out_name):
             print("processing event {} / {}".format(event_nr,nr_events))
         evtdata.get_handles(event)
         for egobj in evtdata.get("egtrigobjs"):
-
+            egobj.et_gen = -1
             gen_match = GenTools.match_to_gen(egobj.eta(),egobj.phi(),evtdata.get("genparts"),pid=11)[0]
             if gen_match:
-                gen_pt = gen_match.pt()
+                egobj.et_gen = gen_match.pt()
                 hists_genmatch.fill(egobj,weight)
                 if not egobj.seeds().empty():
                     hists_genmatch_seed.fill(egobj,weight)
                 if not egobj.gsfTracks().empty():                    
                     hists_genmatch_trk.fill(egobj,weight)
-                else:
-                    gen_pt = -1
 
         gen_eles = GenTools.get_genparts(evtdata.get("genparts"))
         if len(gen_eles)!=2:
@@ -83,10 +81,10 @@ if __name__ == "__main__":
     CoreTools.load_fwlitelibs()
 
     parser = argparse.ArgumentParser(description='example e/gamma HLT analyser')
-    parser.add_argument('--in_names',nargs="+",help='input filenames')
+    parser.add_argument('in_names',nargs="+",help='input filenames')
     parser.add_argument('--prefix','-p',default='file:',help='file prefix')
     parser.add_argument('--out_name','-o',default="./",help='output filename')
-    parser.add_argument('--label',default="",help="label for leg")
+    parser.add_argument('--label','-l',default="",help="label for leg")
     args = parser.parse_args()
 
     in_filenames = CoreTools.get_filenames(args.in_names,args.prefix)
