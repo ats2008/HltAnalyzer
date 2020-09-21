@@ -192,10 +192,11 @@ class HistColl:
 def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=None,meta_data=None):
     hist_coll = HistColl("{tag}Hist".format(tag=tag),label=label,desc=desc,norm_val=norm_val,cutbins=cutbins)
     hist_coll.add_hist("et()","et",";E_{T} [GeV];entries",20,0,100,use_for_eff = True)
+    hist_coll.add_hist("et_gen","etGen",";E_{T}^{gen} [GeV];entries",20,0,100,use_for_eff = True)
     hist_coll.add_hist("eta()","eta",";#eta;entries",60,-3,3,use_for_eff = True)
     hist_coll.add_hist("phi()","phi",";#phi [rad];entries",64,-3.2,3.2,use_for_eff = True)
 
-    hist_coll.add_hist('var("hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)',"sigmaIEtaIEta",";#sigma_{i#etai#eta};entries",100,0,0.4)
+    hist_coll.add_hist('var("hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)',"sigmaIEtaIEta",";#sigma_{i#etai#eta};entries",100,0,0.1)
     hist_coll.add_hist('var("hltEgammaEcalPFClusterIsoUnseeded",0)',"ecalPFClusIso",";ecal pf clus isol [GeV];entries",100,0,20)
     hist_coll.add_hist('var("hltEgammaHcalPFClusterIsoUnseeded",0)',"hcalPFClusIso",";hcal pf clus isol [GeV];entries",100,0,20)
     hist_coll.add_hist('var("hltEgammaHGCalPFClusterIsoUnseeded",0)',"hgcalPFClusIso",";hgcal pf clus isol [GeV];entries",100,0,20)
