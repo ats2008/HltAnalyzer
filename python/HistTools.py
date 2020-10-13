@@ -205,12 +205,15 @@ def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=No
     
     if add_gsf:
         hist_coll.add_hist("gsfTracks().at(0).pt()","gsfTrkPt",";GsfTrk p_{T} [GeV];entries",20,0,100)
-        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Chi2")',"gsfChi2","Gsf Track #Chi^{2}",100,0,100)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Chi2")',"gsfChi2","Gsf Track #chi^{2}",100,0,100)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_DetaSeed")',"deltaEtaInSeed","#Delta#eta_{in}^{seed}",100,0,0.02)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Dphi")',"deltaPhiIn","#Delta#phi_{in}",100,0,0.1)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_MissingHits")',"missHits","#miss hits",5,-0.5,4.5)
-        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_ValidHits")',"validHits","#miss hits",21,-0.5,20.5)
-        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP")',"invEminusInvP","1/E - 1/p",100,-5,5)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_ValidHits")',"validHits","#valid hits",21,-0.5,20.5)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP")',"invEminusInvP","1/E - 1/p",100,-0.5,2)
+        hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoUnseeded")',"trkIsoV0","trk V0 isol",100,0,20)
+        hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoV6Unseeded")',"trkIsoV6","trk V6 isol",100,0,20)
+       
         
         
     if meta_data!=None:
