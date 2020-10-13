@@ -63,6 +63,12 @@ def adjust_yaxis(hist1,hist2,is_eff=False):
     else:
         adjust_yaxis_dist(hist1,hist2)
 
+def set_label_attr(label,text_size=0.657895):
+    label.SetFillStyle(0)
+    label.SetBorderSize(0)
+    label.SetTextFont(42)
+    label.SetTextAlign(12)
+    label.SetTextSize(text_size)
             
 def plot_with_ratio(numer,numer_label,denom,denom_label,div_opt="",hist_data={}):
 
@@ -94,8 +100,8 @@ def plot_with_ratio(numer,numer_label,denom,denom_label,div_opt="",hist_data={})
         label.SetFillStyle(0)
         label.SetBorderSize(0)
         label.SetTextFont(42)
-        label.SetTextAlign(12);
-        label.SetTextSize(0.657895);
+        label.SetTextAlign(12)
+        label.SetTextSize(0.657895)
         label.Draw()
         labels.append(label)
 
@@ -126,11 +132,38 @@ def plot_with_ratio(numer,numer_label,denom,denom_label,div_opt="",hist_data={})
     ratio_hist.GetYaxis().SetTitle("ratio")   
     ratio_hist.GetYaxis().SetRangeUser(0.5,1.5)
     ratio_hist.GetYaxis().SetNdivisions(505)
-    
-    
+    ratio_hist.Fit("pol0")
+    fit_func = ratio_hist.GetFunction("pol0")
     ratio_hist.Draw("EP")
+    warning_box = None
+    bad_match = False
+    if fit_func:
+        chi2 = fit_func.GetChisquare()
+        ndof = fit_func.GetNDF()
+        prob = fit_func.GetProb()
+        p0 = fit_func.GetParameter(0)
+        p0_err = fit_func.GetParError(0)
+        chi2_str = "#chi^{{2}} / ndof = {chi2:.1f}/{ndof}".format(chi2=chi2,ndof=ndof)
+        fit_str = "p0 = {p0:2.3f} #pm {p0_err:2.3f}".format(p0=p0,p0_err=p0_err)
+        chi2_label = ROOT.TPaveLabel(0.640,0.705,0.901,0.903,chi2_str,"brNDC")
+        fit_label = ROOT.TPaveLabel(0.640,0.322,0.901,0.520,fit_str,"brNDC")
+        set_label_attr(chi2_label,0.434789)
+        set_label_attr(fit_label,0.434789)
+        chi2_label.Draw()
+        fit_label.Draw()
+        labels.extend([fit_label,chi2_label])
+        if ndof!=0 and (prob<0.05 or abs((p0-1)/p0_err)>2):
+            print(denom.GetName(),"is bad")
+            c1.cd()
+            warning_box = ROOT.TBox(c1.GetX1(),c1.GetY1(),c1.GetX2(),c1.GetY2());
+            warning_box.SetFillStyle(0);
+            warning_box.SetLineWidth(4);            
+            warning_box.SetLineColor(ROOT.kRed);
+            warning_box.Draw();
+            bad_match = True
+
     spectrum_pad.cd()
-    return c1,spectrum_pad,ratio_pad,ratio_hist,leg,labels
+    return c1,bad_match,spectrum_pad,ratio_pad,ratio_hist,leg,labels,fit_func,warning_box
 
 def gen_html(canvases_to_draw,html_body=None):
     
@@ -230,14 +263,17 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
     
     out_file = ROOT.TFile.Open(os.path.join(out_dir,"output.root"),"RECREATE")
     canvases_to_draw=[]
-    toc_str_base = '<br><a href="#{coll}{hist}"><font color=grey>{coll} : {hist}</font></a>&nbsp;'
+    toc_str_base = '<br><a href="#{coll}{hist}"><font color={colour}>{coll} : {hist}</font></a>&nbsp;'
     toc = []
-    html_body = ["<h1>Egamma Validation page</h1>Note this is an interactive webpage and will take a few moments to load<br><br>{toc}"]
+    html_body = ["<h1>Egamma Validation page</h1>Note this is an interactive webpage and will take a few moments to load<br><br>"]
+    html_body.append("""
+Failing comparisons are indicated in red in the table of contents. The criteria for failing is currently a pol0 fit that either has Prob(chi2,ndof)<0.05 or fits to a p0 more than 2 sigma away from 1.0<br><br>{toc}
+""")
     for collname,coll in tar_index.iteritems():
         html_body.append("<h2>{}</h2>".format(coll['desc']))
         for histbin_name,histbin_data in coll['hists'].iteritems():
             html_body.append('<h3 id="{coll}{hist}">{coll} : {hist}</h3>'.format(coll=coll['desc'],hist=histbin_name))
-            toc.append(toc_str_base.format(coll=coll['desc'],hist=histbin_name))
+            failing_comp = False
             hists_sorted = sorted(histbin_data,key=lambda k: k['name'])
             for hist_data in hists_sorted:
                 #unicode strings fun...hence the str()
@@ -255,6 +291,9 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
                     
                     adjust_yaxis(ref_hist,tar_hist,coll['is_effhist'])
                     res = plot_with_ratio(tar_hist,tar_label,ref_hist,ref_label,"",hist_data)
+                    if res[1]:
+                        failing_comp = True
+
                     c1 = res[0]
                     c1.Update()
                     canvas_name = "{}Canvas".format(hist_name)
@@ -266,6 +305,8 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
              
                 else:
                     print("ref hist",hist_name,"not found")
+            toc_colour = "red" if failing_comp else "grey"
+            toc.append(toc_str_base.format(coll=coll['desc'],hist=histbin_name,colour=toc_colour))
             html_body.append("<br><br>")
     
     html_body_str = "\n".join(html_body).format(toc=''.join(toc))
