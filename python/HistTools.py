@@ -75,13 +75,14 @@ class VarHistBinned:
                 hists[-1] = HistBin(name,newbin_suffix,title,nbins,var_min,var_max,newcut_labels)
             
 
-    def __init__(self,var_func,cutbins,basename,coll_suffix,title,nbins,var_min,var_max):
+    def __init__(self,var_func,cutbins,basename,coll_suffix,title,nbins,var_min,var_max,use_for_eff=False):
         #we remove the cuts on the variable we are plotting
         self.cutbins = [cb for cb in cutbins if cb.var_func!=var_func]
         self.hists = []
         self.basename = basename
         self.coll_suffix = coll_suffix
         self.var_func = var_func
+        self.use_for_eff = use_for_eff
         self.init_hists(self.hists,self.cutbins,"",[],title,nbins,var_min,var_max)
         
     def _fill(self,var,obj,hists,cutbins,weight=1.):
@@ -105,7 +106,7 @@ class VarHistBinned:
             for hist in hists:
                 self._get_hist_data(hist,data)
         except TypeError:
-            hist_dict = {"name" : hists.hist.GetName(),"cut_labels" : hists.cut_labels}
+            hist_dict = {"name" : hists.hist.GetName(),"cut_labels" : hists.cut_labels, "use_for_eff" : self.use_for_eff}
             data.append(hist_dict)
         return data
 
@@ -164,8 +165,8 @@ class HistColl:
         else:
             return str(name)
 
-    def add_hist(self,var_func,name,title,nbins,var_min,var_max):
-        self.hists.append(VarHistBinned(var_func,self.cutbins,name,self.suffix,title,nbins,var_min,var_max))
+    def add_hist(self,var_func,name,title,nbins,var_min,var_max,use_for_eff=False):
+        self.hists.append(VarHistBinned(var_func,self.cutbins,name,self.suffix,title,nbins,var_min,var_max,use_for_eff))
     
     def get_hist(self,name):
         for hist in self.hists:
@@ -190,11 +191,12 @@ class HistColl:
 
 def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=None,meta_data=None):
     hist_coll = HistColl("{tag}Hist".format(tag=tag),label=label,desc=desc,norm_val=norm_val,cutbins=cutbins)
-    hist_coll.add_hist("et()","et",";E_{T} [GeV];entries",20,0,100)
-    hist_coll.add_hist("eta()","eta",";#eta;entries",60,-3,3)
-    hist_coll.add_hist("phi()","phi",";#phi [rad];entries",64,-3.2,3.2)
+    hist_coll.add_hist("et()","et",";E_{T} [GeV];entries",20,0,100,use_for_eff = True)
+    hist_coll.add_hist("et_gen","etGen",";E_{T}^{gen} [GeV];entries",20,0,100,use_for_eff = True)
+    hist_coll.add_hist("eta()","eta",";#eta;entries",60,-3,3,use_for_eff = True)
+    hist_coll.add_hist("phi()","phi",";#phi [rad];entries",64,-3.2,3.2,use_for_eff = True)
 
-    hist_coll.add_hist('var("hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)',"sigmaIEtaIEta",";#sigma_{i#etai#eta};entries",100,0,0.4)
+    hist_coll.add_hist('var("hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)',"sigmaIEtaIEta",";#sigma_{i#etai#eta};entries",100,0,0.1)
     hist_coll.add_hist('var("hltEgammaEcalPFClusterIsoUnseeded",0)',"ecalPFClusIso",";ecal pf clus isol [GeV];entries",100,0,20)
     hist_coll.add_hist('var("hltEgammaHcalPFClusterIsoUnseeded",0)',"hcalPFClusIso",";hcal pf clus isol [GeV];entries",100,0,20)
     hist_coll.add_hist('var("hltEgammaHGCalPFClusterIsoUnseeded",0)',"hgcalPFClusIso",";hgcal pf clus isol [GeV];entries",100,0,20)
@@ -203,12 +205,15 @@ def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=No
     
     if add_gsf:
         hist_coll.add_hist("gsfTracks().at(0).pt()","gsfTrkPt",";GsfTrk p_{T} [GeV];entries",20,0,100)
-        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Chi2")',"gsfChi2","Gsf Track #Chi^{2}",100,0,100)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Chi2")',"gsfChi2","Gsf Track #chi^{2}",100,0,100)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_DetaSeed")',"deltaEtaInSeed","#Delta#eta_{in}^{seed}",100,0,0.02)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Dphi")',"deltaPhiIn","#Delta#phi_{in}",100,0,0.1)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_MissingHits")',"missHits","#miss hits",5,-0.5,4.5)
-        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_ValidHits")',"validHits","#miss hits",21,-0.5,20.5)
-        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP")',"invEminusInvP","1/E - 1/p",100,-5,5)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_ValidHits")',"validHits","#valid hits",21,-0.5,20.5)
+        hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP")',"invEminusInvP","1/E - 1/p",100,-0.5,2)
+        hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoUnseeded")',"trkIsoV0","trk V0 isol",100,0,20)
+        hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoV6Unseeded")',"trkIsoV6","trk V6 isol",100,0,20)
+       
         
         
     if meta_data!=None:
@@ -269,9 +274,10 @@ def make_effhists_fromcoll(numer,denom,tag="",dir_=None,out_hists=[],desc="",met
     md_dict = dict(colldata.__dict__)
     md_dict['hists'] = {}
     for denom_hist in denom.hists:
-        numer_hist = numer.get_hist(denom_hist.basename)
-        md_dict['hists'][denom_hist.basename]=[]
-        make_effhists_fromcoll_binned(numer_hist,denom_hist,tag,dir_,out_hists,md_dict['hists'][denom_hist.basename])
+        if denom_hist.use_for_eff:
+            numer_hist = numer.get_hist(denom_hist.basename)
+            md_dict['hists'][denom_hist.basename]=[]
+            make_effhists_fromcoll_binned(numer_hist,denom_hist,tag,dir_,out_hists,md_dict['hists'][denom_hist.basename])
     if meta_data!=None:
         meta_data[tag]=md_dict
         

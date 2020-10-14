@@ -4,6 +4,9 @@ from __future__ import print_function
 
 from DataFormats.FWLite import Events, Handle
 
+import json
+import re
+
 class HandleData(Handle):
     def __init__(self,product,label):
         Handle.__init__(self,product)
@@ -18,17 +21,47 @@ class EvtHandles:
                 print("adding handle {name}, {type}, {tag}".format(**product))
             setattr(self,product['name'],HandleData(product['type'],product['tag']))
     
-
-    
 class EvtData:
     def __init__(self,products=[],verbose=False):
         self.handles = EvtHandles(products,verbose)
-    def get_handles(self,event):
-        for name,handle in vars(self.handles).iteritems():            
-            handle.get(event)
+        self.event = None
+        self.got_handles = []
+
+    def get_handles(self,event,on_demand=True):
+        """ 
+        gets the handles for the event
+        if on_demand=True it doesnt actually get the handles and instead
+        waits for something to request the handle
+        """ 
+        self.got_handles = []
+        self.event = event
+        if not on_demand:
+            for name,handle in vars(self.handles).iteritems():            
+                handle.get(event)
+                self.got_handles.append(name)
+ 
+    def get_handle(self,name):
+        """ 
+        gets the product handle with name "name"
+        now checks to ensure the handles are got first and not gets them
+        """ 
+        
+        handle = getattr(self.handles,name)
+        if not name in self.got_handles:
+            handle.get(self.event)
+            self.got_handles.append(name)
+
+        return handle
+
     def get(self,name):
+        """ 
+        gets the product with name "name"
+        now checks to ensure the handles are got first and not gets them
+        """ 
+        handle = self.get_handle(name)
+        
         try:
-            return getattr(self.handles,name).product()
+            return handle.product()       
         except RuntimeError:
             return None
            
@@ -56,6 +89,18 @@ class EvtWeights:
         filename = event.getTFile().GetName().split("/")[-1]
         dataset_name = re.search(r'(.+)(_\d+_EDM.root)',filename).groups()[0]
         return self.weight_from_name(dataset_name)
+
+def get_objs(evtdata,events,objname,indx):
+    """
+    A small helper function to save typing out this commands each time
+    """
+    events.to(indx)
+    evtdata.get_handles(events)
+    objs = evtdata.get(objname)
+    print("event: {} {} {}".format(events.eventAuxiliary().run(),events.eventAuxiliary().luminosityBlock(),events.eventAuxiliary().event()))
+    print("# {} = {}".format(objname,objs.size()))
+    return objs
+
 
 def add_product(prods,name,type_,tag):
     prods.append({'name' : name, 'type' : type_, 'tag' : tag})

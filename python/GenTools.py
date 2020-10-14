@@ -65,6 +65,8 @@ def get_genparts(genparts,pid=11,antipart=True,status=PartStatus.PREFSR):
     """
 
     selected = []
+    if genparts==None:
+        return selected
 
     for part in genparts:
         pdg_id = part.pdgId()

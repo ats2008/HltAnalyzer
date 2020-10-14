@@ -7,9 +7,6 @@ import sys
 import re
 
 def load_fwlitelibs():
-    oldargv = sys.argv[:]
-    sys.argv = [ '-b-' ]
-    sys.argv = oldargv
     ROOT.gSystem.Load("libFWCoreFWLite.so");
     ROOT.gSystem.Load("libDataFormatsFWLite.so");
     ROOT.FWLiteEnabler.enable()
@@ -39,8 +36,8 @@ def convert_args(input_args):
 
 def call_func_nochain(obj,func_str):
     #first check if it is just a property 
-    if func_str.isalnum():
-        return (obj,func_name)
+    if func_str.replace("_","").isalnum(): #basically allows "_" but not other non alphanumerica charactor
+        return getattr(obj,func_str)
 
     #okay is it a function
     re_res = re.search(r'([\w]+)(\(\)\Z)',func_str)
@@ -70,3 +67,13 @@ def call_func(obj,func_str):
     for sub_func in sub_funcs:
         res = call_func_nochain(res,sub_func)
     return res
+
+def get_filenames(input_filenames,prefix=""):
+    output_filenames = []
+    for filename in input_filenames:
+        if not filename.endswith(".root"):
+            with open(filename) as f:
+                output_filenames.extend(['{}{}'.format(prefix,l.rstrip()) for l in f])
+        else:
+            output_filenames.append('{}{}'.format(prefix,filename))
+    return output_filenames
