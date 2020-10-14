@@ -101,7 +101,6 @@ def get_objs(evtdata,events,objname,indx):
     print("# {} = {}".format(objname,objs.size()))
     return objs
 
-
 def add_product(prods,name,type_,tag):
     prods.append({'name' : name, 'type' : type_, 'tag' : tag})
 
@@ -118,3 +117,5 @@ add_product(phaseII_products,"hcalhits","edm::SortedCollection<HBHERecHit,edm::S
 add_product(phaseII_products,"trksv0","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV0")
 add_product(phaseII_products,"trksv2","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV2")
 add_product(phaseII_products,"trksv6","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV6")
+add_product(phaseII_products,"trksv72","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV72")
+add_product(phaseII_products,"hglayerclus","std::vector<reco::CaloCluster>","hltEgammaHLTPhase2Extra:hgcalLayerClusters")

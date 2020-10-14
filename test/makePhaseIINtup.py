@@ -11,6 +11,12 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
 
+def fix_hgcal_hforhe(obj,evtdata):
+    layerclus = evtdata.get("hglayerclus")
+    hforhe = ROOT.HGCalClusterTools.hadEnergyInCone(obj.eta(),obj.phi(),layerclus,0,0.15,0.,0.)
+    obj.setVar("hltEgammaHGCALIDVarsUnseeded_hForHOverE",hforhe,True)
+    
+
 def get_h_for_he(obj):
     if(abs(obj.eta())<1.4442):
         return obj.var("hltEgammaHoverEUnseeded",0)
@@ -86,8 +92,11 @@ class EgHLTTreeData:
             TreeVar(self.tree,"runnr/i",Func("eventAuxiliary().run()")),
             TreeVar(self.tree,"lumiSec/i",Func("eventAuxiliary().luminosityBlock()")),
             TreeVar(self.tree,"eventnr/i",Func("eventAuxiliary().event()")),
-            TreeVar(self.tree,"weight/F",Func(partial(weights.weight_from_evt)))
+        
         ]
+        if weights:
+            self.evtvars.append(TreeVar(self.tree,"weight/F",Func(partial(weights.weight_from_evt))))
+            
         egobjnr_name = "nrEgObjs"
         max_egs = 100
      #   self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",Func(partial(ROOT.vector(ROOT.reco.EgTrigSumObj).size)))
@@ -95,6 +104,7 @@ class EgHLTTreeData:
        
         vars_ = {
             'et/F' : Func(partial(ROOT.reco.EgTrigSumObj.et)),
+            'energy/F' : Func(partial(ROOT.reco.EgTrigSumObj.energy)),
             'eta/F' : Func(partial(ROOT.reco.EgTrigSumObj.eta)),
             'phi/F' : Func(partial(ROOT.reco.EgTrigSumObj.phi)),
             'sigmaIEtaIEta/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)),
@@ -155,6 +165,9 @@ class EgHLTTreeData:
         egobjs_raw = evtdata.get("egtrigobjs")
         egobjs = [eg for eg in egobjs_raw if eg.et()>self.min_et]
         egobjs.sort(key=ROOT.reco.EgTrigSumObj.et,reverse=True)
+        for obj in egobjs:
+            fix_hgcal_hforhe(obj,evtdata)
+
         genparts = evtdata.get("genparts")
         self.egobj_nr.fill(egobjs)
         for var_ in self.gen_vars:
@@ -178,12 +191,12 @@ def main():
     parser.add_argument('in_filenames',nargs="+",help='input filename')
     parser.add_argument('--out_filename','-o',default="output.root",help='output filename')
     parser.add_argument('--min_et','-m',default=20.,type=float,help='minimum eg et') 
-    parser.add_argument('--weights','-w',default="weights.json",help="weights filename")
+    parser.add_argument('--weights','-w',default=None,help="weights filename")
     parser.add_argument('--report','-r',default=10,type=int,help="report every N events")
     args = parser.parse_args()
     
     evtdata = EvtData(phaseII_products,verbose=True)
-    weights = EvtWeights(args.weights)
+    weights = EvtWeights(args.weights) if args.weights else None
 
     out_file = ROOT.TFile(args.out_filename,"RECREATE")
     eghlt_tree = EgHLTTreeData('egHLTTree',args.min_et)
