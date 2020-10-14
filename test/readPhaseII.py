@@ -8,7 +8,7 @@ import ROOT
 import json
 import re
 from DataFormats.FWLite import Events, Handle
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products, add_product,get_objs
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
@@ -30,3 +30,5 @@ if __name__ == "__main__":
     events = Events(in_filenames_with_prefix)
     
     print("number of events",events.size())
+
+    
