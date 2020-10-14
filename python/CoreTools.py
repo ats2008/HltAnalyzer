@@ -7,9 +7,6 @@ import sys
 import re
 
 def load_fwlitelibs():
-    oldargv = sys.argv[:]
-    sys.argv = [ '-b-' ]
-    sys.argv = oldargv
     ROOT.gSystem.Load("libFWCoreFWLite.so");
     ROOT.gSystem.Load("libDataFormatsFWLite.so");
     ROOT.FWLiteEnabler.enable()
