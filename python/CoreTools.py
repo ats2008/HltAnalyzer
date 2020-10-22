@@ -77,3 +77,34 @@ def get_filenames(input_filenames,prefix=""):
         else:
             output_filenames.append('{}{}'.format(prefix,filename))
     return output_filenames
+
+
+def get_filenames_vec(input_filenames,prefix=""):
+    output_filenames = ROOT.std.vector("std::string")()
+    for filename in input_filenames:
+        if not filename.endswith(".root"):
+            with open(filename) as f:
+                for line in f:
+                    output_filenames.push_back('{}{}'.format(prefix,line.rstrip()))
+        else:
+            output_filenames.push_back('{}{}'.format(prefix,filename))
+    return output_filenames
+
+
+class Func:
+    def __init__(self,func):
+        self.func_str = None
+        self.func_obj = None
+        
+        if type(func)==str:
+            self.func_str = func
+        else:
+            self.func_obj = func
+
+    def __call__(self,obj):
+        if self.func_str:
+            return call_func(obj,self.func_str)
+        elif self.func_obj:       
+            return self.func_obj.func(obj,*self.func_obj.args,**self.func_obj.keywords)
+        else:
+            return None
