@@ -119,3 +119,4 @@ add_product(phaseII_products,"trksv2","std::vector<reco::Track>","hltEgammaHLTEx
 add_product(phaseII_products,"trksv6","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV6")
 add_product(phaseII_products,"trksv72","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV72")
 add_product(phaseII_products,"hglayerclus","std::vector<reco::CaloCluster>","hltEgammaHLTPhase2Extra:hgcalLayerClusters")
+add_product(phaseII_products,"trig_res","edm::TriggerResults","TriggerResults::HLTX")
