@@ -89,6 +89,22 @@ to parallelise it you just need to do
 where we have moved the input and output filenames to arguments of the runMultiThreaded script and then put the command to execute as --cmd "<  >". We have set it to automatically hadd the output, remove "--hadd" to stop this
 
 
-### runPhaseIINtup.py
+### makePhaseIINtup.py
 
-This script reads in our HLT EDM format and converts it to a flat tree
+This script reads in our HLT EDM format and converts it to a flat tree. This as been designed to be easy to collaborate between ourselfs to add new variables
+
+The tree is constructed by EgHLTTree in Trees. The EgHLTTree class defines a series of core branches and how to fill them from the EvtData object. 
+
+To aid collaboration, two extra functions have been defined `add_eg_vars` and `add_eg_update_funcs`. These functions will add you to add variables for a e/g hlt objects to the tree and also specific functions which may be needed to update the e/g hlt objects before filling the tree
+
+To add new variables, you will need to define a function to make it which takes an EgTrigSumObj as the first argument (or is a method of EgTrigSumObj, to python these are effectively the same thing). 
+
+It would be best to create a new file in HLTAnalyserPy/python with the function or collection of functions and import that function into runPhaseIINtup 
+
+An example
+
+
+
+
+
+
