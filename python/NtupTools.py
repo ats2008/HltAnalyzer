@@ -20,6 +20,16 @@ def make_leaf_name(name,type_,sizename=None):
 
 
 class TreeVar:
+    """
+    this defines a variable for a tree, creating a single branch for it
+    the branch can be a single variable or an array depending on options
+       tree = tree to add branch to
+       varnametype = name of branch and root type eg foo/F
+       func = a unary callable object which acts on the object the branch is being filled from
+       maxsize = maxmimum number of objects storable  (sets the size of the storing array)     
+       sizevar = a string if specified giving the number of objects stored in the branch for that entry, if empty the branch is just a single variable
+    """
+       
     def __init__(self,tree,varnametype,func,maxsize=1,sizevar=""):
         self.varname = varnametype.split("/")[0]
         self.vartype = varnametype.split("/")[1]

@@ -46,11 +46,11 @@ def main():
     out_file = ROOT.TFile(args.out_filename,"RECREATE")
     eghlt_tree = EgHLTTree('egHLTTree',args.min_et,weights)
     eghlt_tree.add_eg_vars({
-        'hForHoverE/F' : CoreTools.Func(partial(get_h_for_he)),
-        'hSumForHoverE/F' : CoreTools.Func(partial(get_hsum_for_he)),
+        'hForHoverE/F' : get_h_for_he,
+        'hSumForHoverE/F' : get_hsum_for_he,
     })
     eghlt_tree.add_eg_update_funcs([
-        CoreTools.Func(partial(fix_hgcal_hforhe,evtdata))
+        CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
     ])
 
     events = Events(args.in_filenames)

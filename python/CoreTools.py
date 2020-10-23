@@ -5,6 +5,8 @@ from __future__ import print_function
 import ROOT
 import sys
 import re
+from enum import Enum
+import functools
 
 def load_fwlitelibs():
     ROOT.gSystem.Load("libFWCoreFWLite.so");
@@ -62,6 +64,14 @@ def call_func_nochain(obj,func_str):
 
         
 def call_func(obj,func_str):
+    """
+    allows us to call a function/method via a string as you would type it in python
+    It can also chain functions or simply return member variables
+    examples:
+       var("hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)
+       eventAuxiliary().run()
+       
+    """
     sub_funcs = func_str.split(".")
     res = obj
     for sub_func in sub_funcs:
@@ -91,20 +101,39 @@ def get_filenames_vec(input_filenames,prefix=""):
     return output_filenames
 
 
-class Func:
-    def __init__(self,func):
-        self.func_str = None
-        self.func_obj = None
+class UnaryFunc:
+    """
+    this is a simple class which allows us to define a unary function 
+    this can be a method of function or a normal one
+    can be specified using parital wrapping around the function or a string
+    which allows us to convert functions to unary functions vi
+    """
+    class FuncType(Enum):
+        default = 0
+        str_ = 1 
+        partial_ = 2
         
-        if type(func)==str:
-            self.func_str = func
+
+    def __init__(self,func):
+        self.func = func        
+
+        func_type = type(func)
+        if func_type==str:
+            self.func_type = UnaryFunc.FuncType.str_
+        elif func_type==functools.partial:
+            self.func_type = UnaryFunc.FuncType.partial_
         else:
-            self.func_obj = func
+            self.func_type = UnaryFunc.FuncType.default
+
 
     def __call__(self,obj):
-        if self.func_str:
-            return call_func(obj,self.func_str)
-        elif self.func_obj:       
-            return self.func_obj.func(obj,*self.func_obj.args,**self.func_obj.keywords)
+        if self.func_type==UnaryFunc.FuncType.str_:
+            return call_func(obj,self.func)
+        #here we work around the fact we need to put the object as the first
+        #argument to the function when using partial
+        elif self.func_type==UnaryFunc.FuncType.partial_: 
+            return self.func.func(obj,*self.func.args,**self.func.keywords)
+        elif self.func_type==UnaryFunc.FuncType.default:
+            return self.func(obj)
         else:
-            return None
+            raise ValueError("error, func_type {} not known".func_type)

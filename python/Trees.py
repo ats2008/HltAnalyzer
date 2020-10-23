@@ -2,7 +2,7 @@ import ROOT
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
-from Analysis.HLTAnalyserPy.CoreTools import Func
+from Analysis.HLTAnalyserPy.CoreTools import UnaryFunc
 from Analysis.HLTAnalyserPy.NtupTools import TreeVar
 
 from functools import partial
@@ -24,49 +24,49 @@ class EgHLTTree:
 
     def _init_tree(self):
         self.evtvars = [
-            TreeVar(self.tree,"runnr/i",Func("eventAuxiliary().run()")),
-            TreeVar(self.tree,"lumiSec/i",Func("eventAuxiliary().luminosityBlock()")),
-            TreeVar(self.tree,"eventnr/i",Func("eventAuxiliary().event()")),
+            TreeVar(self.tree,"runnr/i",UnaryFunc("eventAuxiliary().run()")),
+            TreeVar(self.tree,"lumiSec/i",UnaryFunc("eventAuxiliary().luminosityBlock()")),
+            TreeVar(self.tree,"eventnr/i",UnaryFunc("eventAuxiliary().event()")),
         
         ]
         if self.weights:
-            self.evtvars.append(TreeVar(self.tree,"weight/F",Func(partial(weights.weight_from_evt))))
+            self.evtvars.append(TreeVar(self.tree,"weight/F",UnaryFunc(partial(weights.weight_from_evt))))
             
         egobjnr_name = "nrEgObjs"
         max_egs = 100    
-        self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",Func(partial(len)))
+        self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",UnaryFunc(partial(len)))
        
         vars_ = {
-            'et/F' : Func(partial(ROOT.reco.EgTrigSumObj.et)),
-            'energy/F' : Func(partial(ROOT.reco.EgTrigSumObj.energy)),
-            'eta/F' : Func(partial(ROOT.reco.EgTrigSumObj.eta)),
-            'phi/F' : Func(partial(ROOT.reco.EgTrigSumObj.phi)),
-            'sigmaIEtaIEta/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)),
-            'ecalPFIsol/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEcalPFClusterIsoUnseeded",0)),
-            'hcalPFIsol/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaHcalPFClusterIsoUnseeded",0)),
-            'trkIsolV0/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoUnseeded",0)),
-            'trkIsolV6/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoV6Unseeded",0)),
-            'trkIsolV72/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoV72Unseeded",0)),
-            'trkChi2/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Chi2",0)),
-            'trkMissHits/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_MissingHits",0)),
-            'trkValidHits/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_ValidHits",0)),
-            'invESeedInvP/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_OneOESeedMinusOneOP",0)),
-            'invEInvP/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP",0)),
-            'trkDEta/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Deta",0)),
-            'trkDEtaSeed/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_DetaSeed",0)),
-            'trkDPhi/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_DetaSeed",0)),
-            'rVar/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_rVar',0)),
-            'sigma2uu/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2uu',0)),
-            'sigma2vv/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2vv',0)),
-            'sigma2ww/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2ww',0)),
-            'sigma2xx/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2xx',0)),
-            'sigma2xy/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2xy',0)),
-            'sigma2yy/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2yy',0)),
-            'sigma2yz/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2yz',0)),
-            'sigma2zx/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2zx',0)),
-            'sigma2zz/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2zz',0)),
-            'hgcalHForHoverE/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_hForHOverE',0)),
-            'hcalHForHoverE/F' : Func(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHoverEUnseeded',0)),
+            'et/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.et)),
+            'energy/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.energy)),
+            'eta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.eta)),
+            'phi/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.phi)),
+            'sigmaIEtaIEta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)),
+            'ecalPFIsol/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEcalPFClusterIsoUnseeded",0)),
+            'hcalPFIsol/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaHcalPFClusterIsoUnseeded",0)),
+            'trkIsolV0/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoUnseeded",0)),
+            'trkIsolV6/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoV6Unseeded",0)),
+            'trkIsolV72/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoV72Unseeded",0)),
+            'trkChi2/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Chi2",0)),
+            'trkMissHits/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_MissingHits",0)),
+            'trkValidHits/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_ValidHits",0)),
+            'invESeedInvP/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_OneOESeedMinusOneOP",0)),
+            'invEInvP/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP",0)),
+            'trkDEta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Deta",0)),
+            'trkDEtaSeed/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_DetaSeed",0)),
+            'trkDPhi/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_DetaSeed",0)),
+            'rVar/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_rVar',0)),
+            'sigma2uu/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2uu',0)),
+            'sigma2vv/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2vv',0)),
+            'sigma2ww/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2ww',0)),
+            'sigma2xx/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2xx',0)),
+            'sigma2xy/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2xy',0)),
+            'sigma2yy/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2yy',0)),
+            'sigma2yz/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2yz',0)),
+            'sigma2zx/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2zx',0)),
+            'sigma2zz/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2zz',0)),
+            'hgcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_hForHOverE',0)),
+            'hcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHoverEUnseeded',0)),
         }
         vars_.update(self.eg_extra_vars)
 
@@ -75,11 +75,11 @@ class EgHLTTree:
             self.egobj_vars.append(TreeVar(self.tree,"eg_"+name,func,max_egs,egobjnr_name))
             
         gen_vars_names = {
-            'pt/F' : Func(partial(ROOT.reco.GenParticle.pt)),
-            'et/F' : Func(partial(ROOT.reco.GenParticle.et)),
-            'eta/F' : Func(partial(ROOT.reco.GenParticle.eta)),
-            'phi/F' : Func(partial(ROOT.reco.GenParticle.phi)),
-            'vz/F' : Func(partial(ROOT.reco.GenParticle.vz)),
+            'pt/F' : UnaryFunc(partial(ROOT.reco.GenParticle.pt)),
+            'et/F' : UnaryFunc(partial(ROOT.reco.GenParticle.et)),
+            'eta/F' : UnaryFunc(partial(ROOT.reco.GenParticle.eta)),
+            'phi/F' : UnaryFunc(partial(ROOT.reco.GenParticle.phi)),
+            'vz/F' : UnaryFunc(partial(ROOT.reco.GenParticle.vz)),
         }
         self.gen_vars = []
         for name,func in gen_vars_names.iteritems():
@@ -93,7 +93,7 @@ class EgHLTTree:
         self.trig_vars = []
         for name in trig_names:
             self.trig_vars.append(TreeVar(self.tree,"path_{}/i".format(name),
-                                          Func(partial(TrigTools.TrigResults.result,name))))
+                                          UnaryFunc(partial(TrigTools.TrigResults.result,name))))
 
         self.initialised = True
 
