@@ -99,9 +99,19 @@ To aid collaboration, two extra functions have been defined `add_eg_vars` and `a
 
 To add new variables, you will need to define a function to make it which takes an EgTrigSumObj as the first argument (or is a method of EgTrigSumObj, to python these are effectively the same thing). 
 
-It would be best to create a new file in HLTAnalyserPy/python with the function or collection of functions and import that function into runPhaseIINtup 
+It would be best to create a new file in HLTAnalyserPy/python with the function or collection of functions and import that function into makePhaseIINtup.py
 
-An example
+##### Adding a New EG Variable
+
+To add a variable simply pass as dictionary with the keys being the name of the variable with the [[https://root.cern.ch/doc/master/classTTree.html#addcolumnoffundamentaltypes][root type]] appended (eg "et/F") and the values being a function or other callable object which takes an EgTrigSumObj as its sole arugment to EgHLTTree.add_eg_vars(). This function can be called multiple times and will just add the variables, overriding existing variables of the same name
+
+If the function to produce the variable requires additional arguements beyond the egobj, you can use CoreTools.UnaryFunc. This you can pass in either a string as you would type in python, including nesting functions such as superCluster().energy(). You can also pass in functools.partial object where you can specify the addtional arguements. 
+
+You can see examples of this in the EgHLTTree class defination where it fills the default variables. Its important to remember here that member variables in python act like a function which takes the object as the first argument, a fact we exploit here. 
+
+#### Updating the EG objects
+
+It might be useful to update the e/gamma objects before filling. This might be adding new variables to them, fixing existing variables, etc. This can be done 
 
 
 
