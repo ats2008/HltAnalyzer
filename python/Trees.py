@@ -2,10 +2,12 @@ import ROOT
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
+import Analysis.HLTAnalyserPy.L1Tools as L1Tools
 from Analysis.HLTAnalyserPy.CoreTools import UnaryFunc
 from Analysis.HLTAnalyserPy.NtupTools import TreeVar
 
 from functools import partial
+import itertools
 
 class EgHLTTree:
     def __init__(self,tree_name,min_et=0.,weights=None):
@@ -32,7 +34,7 @@ class EgHLTTree:
         if self.weights:
             self.evtvars.append(TreeVar(self.tree,"weight/F",UnaryFunc(partial(weights.weight_from_evt))))
             
-        egobjnr_name = "nrEgObjs"
+        egobjnr_name = "nrEgs"
         max_egs = 100    
         self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",UnaryFunc(partial(len)))
        
@@ -84,7 +86,35 @@ class EgHLTTree:
         self.gen_vars = []
         for name,func in gen_vars_names.iteritems():
             self.gen_vars.append(TreeVar(self.tree,"eg_gen_"+name,func,max_egs,egobjnr_name))
+        
+        scales_params = L1Tools.make_egscale_dict()
+        l1pho_vars_names = {
+            'et/F' : UnaryFunc("et()"),
+            'eta/F' : UnaryFunc("eta()"),
+            'phi/F' : UnaryFunc("phi()"),
+            'hwQual/F' : UnaryFunc("hwQual()"),
+            'trkIsol/F' : UnaryFunc('trkIsol()'),
+            'trkIsolPV/F' : UnaryFunc('trkIsolPV()'),
+            'passQual/b' : L1Tools.pass_eg_qual,
+            'passIsol/b' : L1Tools.pass_eg_isol,
             
+            'etThresIso/F' : UnaryFunc(partial(L1Tools.eg_thres,scales_params,use_iso=True)),
+            'etThresNonIso/F' : UnaryFunc(partial(L1Tools.eg_thres,scales_params,use_noniso=True)),
+            'etThres/F' : UnaryFunc(partial(L1Tools.eg_thres,scales_params))            
+            }
+        self.l1pho_vars = []
+        for name,func in l1pho_vars_names.iteritems():
+            self.l1pho_vars.append(TreeVar(self.tree,"eg_l1pho_"+name,func,max_egs,egobjnr_name))   
+        l1ele_vars_names = dict(l1pho_vars_names)
+        l1ele_vars_names.update({
+            'vz/F' : UnaryFunc('trkzVtx()'),
+            'trkCurve/F' : UnaryFunc('trackCurvature()')        
+        })
+        self.l1ele_vars = []
+        for name,func in l1ele_vars_names.iteritems():
+            self.l1ele_vars.append(TreeVar(self.tree,"eg_l1ele_"+name,func,max_egs,egobjnr_name))   
+
+
         trig_names = ["Gen_QCDMuGenFilter",
                       "Gen_QCDBCToEFilter",
                       "Gen_QCDEmEnrichingFilter",
@@ -92,8 +122,9 @@ class EgHLTTree:
         self.trig_res = TrigTools.TrigResults(trig_names)
         self.trig_vars = []
         for name in trig_names:
-            self.trig_vars.append(TreeVar(self.tree,"path_{}/i".format(name),
+            self.trig_vars.append(TreeVar(self.tree,"path_{}/b".format(name),
                                           UnaryFunc(partial(TrigTools.TrigResults.result,name))))
+
 
         self.initialised = True
 
@@ -112,9 +143,17 @@ class EgHLTTree:
                 update_func(obj)
 
         genparts = evtdata.get("genparts")
+        l1phos_eb  = evtdata.get("l1tkphos_eb")
+        l1phos_hgcal = evtdata.get("l1tkphos_hgcal") 
+        l1phos = [eg for eg in itertools.chain(l1phos_eb,l1phos_hgcal)]
+        l1eles_eb  = evtdata.get("l1tkeles_eb")
+        l1eles_hgcal = evtdata.get("l1tkeles_hgcal") 
+        l1eles = [eg for eg in itertools.chain(l1eles_eb,l1eles_hgcal)]
         self.egobj_nr.fill(egobjs)
-        for var_ in self.gen_vars:
+        for var_ in itertools.chain(self.gen_vars,self.l1pho_vars,self.l1ele_vars):
             var_.clear()
+        
+
         for objnr,obj in enumerate(egobjs):
             for var_ in self.egobj_vars:                
                 var_.fill(obj,objnr)
@@ -122,6 +161,16 @@ class EgHLTTree:
             if gen_obj:
                 for var_ in self.gen_vars:
                     var_.fill(gen_obj,objnr)
+
+            l1pho_obj = CoreTools.get_best_dr_match(obj,l1phos,0.2)
+            l1ele_obj = L1Tools.get_l1ele_from_l1pho(l1pho_obj,l1eles) if l1pho_obj else None
+            if l1pho_obj:
+                for var_ in self.l1pho_vars:
+                    var_.fill(l1pho_obj,objnr)
+            if l1ele_obj:
+                for var_ in self.l1ele_vars:
+                    var_.fill(l1ele_obj,objnr)
+                    
 
         self.trig_res.fill(evtdata)
         for var_ in self.trig_vars:

@@ -137,3 +137,18 @@ class UnaryFunc:
             return self.func(obj)
         else:
             raise ValueError("error, func_type {} not known".func_type)
+
+
+def get_best_dr_match(obj_to_match,coll,max_dr):
+    best_dr2 = max_dr*max_dr
+    matched_obj = None
+    eta = obj_to_match.eta()
+    phi = obj_to_match.phi()
+    for obj in coll:
+        dr2 = ROOT.reco.deltaR2(eta,phi,obj.eta(),obj.phi())
+        if dr2 < best_dr2:
+            best_dr2 = dr2
+            matched_obj = obj
+    return matched_obj
+        
+            

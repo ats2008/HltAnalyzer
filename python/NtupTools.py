@@ -7,6 +7,10 @@ def treetype_to_arraytype(treetype):
         return 'I'
     elif treetype=='F':
         return 'f'
+    elif treetype=='b':
+        return 'B'
+    elif treetype=='B':
+        return 'b'
     else:
         raise ValueError("undefined type code",treetype)
 
