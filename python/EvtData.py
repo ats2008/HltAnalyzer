@@ -66,29 +66,52 @@ class EvtData:
             return None
            
 class EvtWeights:
-    def __init__(self,input_filename,lumi=0.075):
+    def __init__(self,input_filename,corr_for_pu=False,lumi=0.075):
         if input_filename: 
             with open(input_filename,'r') as f:
                 self.data = json.load(f)
         else:
             self.data = {}            
         self.warned = []
+        self.corr_for_pu = corr_for_pu
         self.lumi = lumi #luminosity to weight to in pb
 
-    def weight_from_name(self,dataset_name):
+    def weight_from_name(self,dataset_name,evtdata=None):
         if dataset_name in self.data:
             val = self.data[dataset_name]
-            return val['xsec']/val['nrtot']*self.lumi
+            weight = val['xsec']/val['nrtot']*self.lumi
+            if not self.corr_for_pu:
+                return weight
+            else:
+                return weight*self.pu_doublecount_weight(evtdata,dataset_name)
+
         else:
             if dataset_name not in self.warned:
                 self.warned.append(dataset_name) 
                 print("{} not in weights file, returning weight 1".format(dataset_name))
             return 1.
 
-    def weight_from_evt(self,event):
+    def weight_from_evt(self,event,evtdata=None):
         filename = event.getTFile().GetName().split("/")[-1]
         dataset_name = re.search(r'(.+)(_\d+_EDM.root)',filename).groups()[0]
-        return self.weight_from_name(dataset_name)
+        return self.weight_from_name(dataset_name,evtdata)
+
+    def pu_doublecount_weight(self,evtdata,dataset_name):
+        frac_pu_with_lt_pthat = {160.0: 0.9996301858036174, 130.0: 0.9990026223188471, 100.0: 0.9966604657417576, 70.0: 0.9855212138870834, 40.0: 0.8834749086671, 10.0: 2.2412981598942108e-05, 140.0: 0.9992603716072349, 110.0: 0.9978259407849026, 80.0: 0.9915166864648004, 200.0: 0.9998767286012058, 50.0: 0.9488871954636126, 20.0: 0.23302776968420108, 190.0: 0.9998431091288074, 150.0: 0.9994957079140238, 120.0: 0.9985319497052693, 180.0: 0.9997758701840105, 90.0: 0.9948113947598449, 60.0: 0.9740569737992245, 170.0: 0.9997310442208126, 30.0: 0.7006746307461281}
+
+
+        if not dataset_name.startswith("QCD"):
+            return 1.
+        else:
+            match = re.search(r'Pt[_-]([0-9]+)[to]+([a-zA-Z0-9]+)',dataset_name)
+            sample_min_pt_hat = float(match.group(1) )
+            #sample_max_pt_hat = 9999. if match.group(2)=="Inf" else float(match.group(2))
+            pu_sum  = evtdata.get("pu_sum")
+            pu_max_pt_hat = max([x for x in pu_sum[3].getPU_pT_hats()])
+            if pu_max_pt_hat>sample_min_pt_hat:
+                return 0.
+            else:       
+                return 1./frac_pu_with_lt_pthat[sample_min_pt_hat]
 
 def get_objs(evtdata,events,objname,indx):
     """
@@ -126,3 +149,4 @@ add_product(phaseII_products,"l1tkphos_eb","std::vector<l1t::TkEm>","L1TkPhotons
 add_product(phaseII_products,"l1tkphos_hgcal","std::vector<l1t::TkEm>","L1TkPhotonsHGC:EG")
 add_product(phaseII_products,"l1egs_eb","BXVector<l1t::EGamma>","L1EGammaClusterEmuProducer")
 add_product(phaseII_products,"l1egs_hgcal","BXVector<l1t::EGamma>","l1EGammaEEProducer:L1EGammaCollectionBXVWithCuts")
+add_product(phaseII_products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
