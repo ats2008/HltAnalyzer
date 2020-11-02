@@ -41,10 +41,10 @@ def main():
     args = parser.parse_args()
     
     evtdata = EvtData(phaseII_products,verbose=True)
-    weights = EvtWeights(args.weights) if args.weights else None
+    weights = EvtWeights(args.weights,corr_for_pu=True) if args.weights else None
 
     out_file = ROOT.TFile(args.out_filename,"RECREATE")
-    eghlt_tree = EgHLTTree('egHLTTree',args.min_et,weights)
+    eghlt_tree = EgHLTTree('egHLTTree',evtdata,args.min_et,weights)
     eghlt_tree.add_eg_vars({
         'hForHoverE/F' : get_h_for_he,
         'hSumForHoverE/F' : get_hsum_for_he,
@@ -59,7 +59,7 @@ def main():
         if event_nr%args.report==0:
             print("processing event {} / {}".format(event_nr,nr_events))
         evtdata.get_handles(event)
-        eghlt_tree.fill(evtdata)
+        eghlt_tree.fill()
 
     out_file.Write()
 

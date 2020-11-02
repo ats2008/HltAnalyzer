@@ -10,10 +10,11 @@ from functools import partial
 import itertools
 
 class EgHLTTree:
-    def __init__(self,tree_name,min_et=0.,weights=None):
+    def __init__(self,tree_name,evtdata,min_et=0.,weights=None):
         self.tree = ROOT.TTree(tree_name,'')
+        self.evtdata = evtdata
         self.min_et = min_et
-        self.weights = None
+        self.weights = weights
         self.initialised = False
         self.eg_extra_vars = {}
         self.eg_update_funcs = []
@@ -32,7 +33,7 @@ class EgHLTTree:
         
         ]
         if self.weights:
-            self.evtvars.append(TreeVar(self.tree,"weight/F",UnaryFunc(partial(weights.weight_from_evt))))
+            self.evtvars.append(TreeVar(self.tree,"weight/F",UnaryFunc(partial(self.weights.weight_from_evt,self.evtdata))))
             
         egobjnr_name = "nrEgs"
         max_egs = 100    
@@ -128,26 +129,26 @@ class EgHLTTree:
 
         self.initialised = True
 
-    def fill(self,evtdata):
+    def fill(self):
         if not self.initialised:
             self._init_tree()
 
         for var_ in self.evtvars:
-            var_.fill(evtdata.event.object())
+            var_.fill(self.evtdata.event.object())
             
-        egobjs_raw = evtdata.get("egtrigobjs")
+        egobjs_raw = self.evtdata.get("egtrigobjs")
         egobjs = [eg for eg in egobjs_raw if eg.et()>self.min_et]
         egobjs.sort(key=ROOT.reco.EgTrigSumObj.et,reverse=True)
         for obj in egobjs:
             for update_func in self.eg_update_funcs:
                 update_func(obj)
 
-        genparts = evtdata.get("genparts")
-        l1phos_eb  = evtdata.get("l1tkphos_eb")
-        l1phos_hgcal = evtdata.get("l1tkphos_hgcal") 
+        genparts = self.evtdata.get("genparts")
+        l1phos_eb  = self.evtdata.get("l1tkphos_eb")
+        l1phos_hgcal = self.evtdata.get("l1tkphos_hgcal") 
         l1phos = [eg for eg in itertools.chain(l1phos_eb,l1phos_hgcal)]
-        l1eles_eb  = evtdata.get("l1tkeles_eb")
-        l1eles_hgcal = evtdata.get("l1tkeles_hgcal") 
+        l1eles_eb  = self.evtdata.get("l1tkeles_eb")
+        l1eles_hgcal = self.evtdata.get("l1tkeles_hgcal") 
         l1eles = [eg for eg in itertools.chain(l1eles_eb,l1eles_hgcal)]
         self.egobj_nr.fill(egobjs)
         for var_ in itertools.chain(self.gen_vars,self.l1pho_vars,self.l1ele_vars):
@@ -172,7 +173,7 @@ class EgHLTTree:
                     var_.fill(l1ele_obj,objnr)
                     
 
-        self.trig_res.fill(evtdata)
+        self.trig_res.fill(self.evtdata)
         for var_ in self.trig_vars:
             var_.fill(self.trig_res)
 
