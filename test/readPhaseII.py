@@ -14,6 +14,42 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
 
+def match_tkeg_index(egidx,trkegs):
+    for trkeg in trkegs:
+        if trkeg.EGRef().key()==egidx:
+            return trkeg
+    return None
+
+
+def print_l1_region(evtdata,suffix):
+    l1egs = evtdata.get("l1egs{}".format(suffix))
+    l1tkphos = evtdata.get("l1tkphos{}".format(suffix))
+    l1tkeles = evtdata.get("l1tkeles{}".format(suffix))
+    
+    for egidx,eg in enumerate(l1egs):
+        tkpho = match_tkeg_index(egidx,l1tkphos)
+        tkele = match_tkeg_index(egidx,l1tkeles)
+        print_str = "  {indx} {et} {eta} {phi}".format(indx=egidx,et=eg.et(),
+                                                       eta=eg.eta(),phi=eg.phi())
+        if tkpho:
+            print_str+=" tkpho {et} {isol} {isolPV}".format(et = tkpho.et(),
+                                                             isol = tkpho.trkIsol(),
+                                                             isolPV = tkpho.trkIsolPV())
+        if tkele:
+            print_str+=" tkele {et} {isol} {isolPV} {zvtx}".format(
+                et = tkele.et(),isol = tkele.trkIsol(),isolPV = tkele.trkIsolPV(),
+                zvtx = tkele.trkzVtx())
+        print(print_str)
+
+    
+def print_l1(evtdata,events,index):
+    events.to(index)
+    evtdata.get_handles(events)
+    print("barrel:")
+    print_l1_region(evtdata,"_eb")
+    print("encap:")
+    print_l1_region(evtdata,"_hgcal")
+
 if __name__ == "__main__":
     
     CoreTools.load_fwlitelibs()
