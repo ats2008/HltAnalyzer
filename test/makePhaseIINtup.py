@@ -10,6 +10,7 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
+import Analysis.HLTAnalyserPy.GsfTools as GsfTools
 from Analysis.HLTAnalyserPy.Trees import EgHLTTree
 
 def fix_hgcal_hforhe(obj,evtdata):
@@ -17,7 +18,6 @@ def fix_hgcal_hforhe(obj,evtdata):
     hforhe = ROOT.HGCalClusterTools.hadEnergyInCone(obj.eta(),obj.phi(),layerclus,0,0.15,0.,0.)
     obj.setVar("hltEgammaHGCALIDVarsUnseeded_hForHOverE",hforhe,True)
     
-
 def get_h_for_he(obj):
     if(abs(obj.eta())<1.4442):
         return obj.var("hltEgammaHoverEUnseeded",0)
@@ -26,8 +26,7 @@ def get_h_for_he(obj):
 
 def get_hsum_for_he(obj):
     return obj.var("hltEgammaHoverEUnseeded",0) + obj.var("hltEgammaHGCALIDVarsUnseeded_hForHOverE",0)
-        
-     
+
 def main():
     
     CoreTools.load_fwlitelibs();
@@ -48,6 +47,9 @@ def main():
     eghlt_tree.add_eg_vars({
         'hForHoverE/F' : get_h_for_he,
         'hSumForHoverE/F' : get_hsum_for_he,
+        'nLayerIT/I' : GsfTools.get_nlayerpix_gsf,
+        'nLayerOT/I' : GsfTools.get_nlayerstrip_gsf,
+        'normChi2/F' : GsfTools.get_normchi2_gsf
     })
     eghlt_tree.add_eg_update_funcs([
         CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
