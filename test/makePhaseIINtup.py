@@ -10,6 +10,7 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
+import Analysis.HLTAnalyserPy.GsfTools as GsfTools
 from Analysis.HLTAnalyserPy.Trees import EgHLTTree
 
 def fix_hgcal_hforhe(obj,evtdata):
@@ -26,45 +27,6 @@ def get_h_for_he(obj):
 def get_hsum_for_he(obj):
     return obj.var("hltEgammaHoverEUnseeded",0) + obj.var("hltEgammaHGCALIDVarsUnseeded_hForHOverE",0)
 
-def get_indx_best_gsf(obj):
-    min_EoPm1=999.9
-    min_mhit=999
-    index_best_gsf=0
-    index=0
-    for gsf in obj.gsfTracks():
-        this_mhit = gsf.hitPattern().numberOfLostHits(ROOT.reco.HitPattern.MISSING_INNER_HITS)
-        this_EoPm1 = abs(( (obj.superCluster().energy()) /  (gsf.innerMomentum().R() ) ) - 1)
-        if ( this_mhit < min_mhit ):
-            min_mhit=this_mhit
-            if (this_EoPm1 < min_EoPm1): min_EoPm1 = this_EoPm1
-            index_best_gsf=index
-        elif (this_mhit == min_mhit):
-            if (this_EoPm1 < min_EoPm1):
-                index_best_gsf=index
-        index=index+1
-    return index_best_gsf
-
-def get_nlayerpix_gsf(obj):
-    if obj.gsfTracks().empty():
-        return 0
-    else:
-        indx_bestgsf=get_indx_best_gsf(obj)
-        return obj.gsfTracks()[indx_bestgsf].hitPattern().pixelLayersWithMeasurement()
-
-def get_nlayerstrip_gsf(obj):
-    if obj.gsfTracks().empty():
-        return 0
-    else:
-        indx_bestgsf=get_indx_best_gsf(obj)
-        return obj.gsfTracks()[indx_bestgsf].hitPattern().stripLayersWithMeasurement()
-
-def get_normchi2_gsf(obj):
-    if obj.gsfTracks().empty():
-        return 999
-    else:
-        indx_bestgsf=get_indx_best_gsf(obj)
-        return obj.gsfTracks()[indx_bestgsf].normalizedChi2() 
-     
 def main():
     
     CoreTools.load_fwlitelibs();
@@ -85,9 +47,9 @@ def main():
     eghlt_tree.add_eg_vars({
         'hForHoverE/F' : get_h_for_he,
         'hSumForHoverE/F' : get_hsum_for_he,
-        'nLayerIT_gsf/I' : get_nlayerpix_gsf,
-        'nLayerOT_gsf/I' : get_nlayerstrip_gsf,
-        'normalisedChi2_gsf/F' : get_normchi2_gsf
+        'nLayerIT/I' : GsfTools.get_nlayerpix_gsf,
+        'nLayerOT/I' : GsfTools.get_nlayerstrip_gsf,
+        'normChi2/F' : GsfTools.get_normchi2_gsf
     })
     eghlt_tree.add_eg_update_funcs([
         CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
