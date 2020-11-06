@@ -8,7 +8,7 @@ import re
 
 import Analysis.HLTAnalyserPy.GsfTools as GsfTools
 
-def get_HLT_iso(egobj,trks):
+def get_hlt_iso(egobj,evtdata,trkcoll="trksv6",min_pt=1.,max_dz=0.15,min_deta=0.01,max_dr2=0.3*0.3,min_dr2=0.01*0.01):
 
     if egobj.gsfTracks().empty():
         return 0
@@ -19,14 +19,9 @@ def get_HLT_iso(egobj,trks):
     phi = egobj.gsfTracks()[indx_bestgsf].phi()
     vz = egobj.gsfTracks()[indx_bestgsf].vz() 
 
-    min_pt = 1.
-    max_dz = 0.15
-    min_deta = 0.01
-    max_dr2 = 0.3*0.3
-    min_dr2 = 0.01*0.01
-
     isol = 0.
 
+    trks = evtdata.get(trkcoll)
     for trk in trks:
         if trk.pt()<min_pt: continue
         dz = vz - trk.vz()
@@ -39,7 +34,7 @@ def get_HLT_iso(egobj,trks):
 
     return isol
 
-def get_L1_iso(egobj,l1trks):
+def get_l1_iso(egobj,evtdata,min_pt=2.,max_dz=0.7,min_deta=0.003,max_dr2=0.3*0.3,min_dr2=0.01*0.01):
 
     if egobj.gsfTracks().empty():
         return 0
@@ -50,14 +45,9 @@ def get_L1_iso(egobj,l1trks):
     phi = egobj.gsfTracks()[indx_bestgsf].phi()
     vz = egobj.gsfTracks()[indx_bestgsf].vz()
                       
-    min_pt = 2.
-    max_dz = 0.7
-    min_deta = 0.003
-    max_dr2 = 0.3*0.3
-    min_dr2 = 0.01*0.01
-
     l1isol = 0.
 
+    l1trks = evtdata.get("l1trks")
     for l1trk_extra in l1trks:
         l1trk = l1trk_extra.ttTrk()
         pt = l1trk.momentum().perp()

@@ -51,8 +51,8 @@ def main():
         'nLayerIT/I' : GsfTools.get_nlayerpix_gsf,
         'nLayerOT/I' : GsfTools.get_nlayerstrip_gsf,
         'normChi2/F' : GsfTools.get_normchi2_gsf,
-        'HLTiso/F' : IsolTools.get_HLT_iso,
-        'L1iso/F' : IsolTools.get_L1_iso
+        'hltiso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv6")),
+        'l1iso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_l1_iso,evtdata))
     })
     eghlt_tree.add_eg_update_funcs([
         CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
