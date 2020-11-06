@@ -11,6 +11,7 @@ import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
 import Analysis.HLTAnalyserPy.GsfTools as GsfTools
+import Analysis.HLTAnalyserPy.IsolTools as IsolTools
 from Analysis.HLTAnalyserPy.Trees import EgHLTTree
 
 def fix_hgcal_hforhe(obj,evtdata):
@@ -49,7 +50,9 @@ def main():
         'hSumForHoverE/F' : get_hsum_for_he,
         'nLayerIT/I' : GsfTools.get_nlayerpix_gsf,
         'nLayerOT/I' : GsfTools.get_nlayerstrip_gsf,
-        'normChi2/F' : GsfTools.get_normchi2_gsf
+        'normChi2/F' : GsfTools.get_normchi2_gsf,
+        'hltiso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv6")),
+        'l1iso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_l1_iso,evtdata))
     })
     eghlt_tree.add_eg_update_funcs([
         CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
