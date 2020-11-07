@@ -54,7 +54,9 @@ def main():
         'hltisov6/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv6")),
         'hltisov72/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv72")),
         'l1iso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_l1_iso,evtdata)),
-        'hgcaliso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso,evtdata))
+        'hgcaliso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso,evtdata)),
+        'ecaliso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_ecal_iso,evtdata)),
+        'hcaliso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcal_iso,evtdata))
     })
     eghlt_tree.add_eg_update_funcs([
         CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))

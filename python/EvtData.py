@@ -120,6 +120,8 @@ add_product(phaseII_products,"trksv6","std::vector<reco::Track>","hltEgammaHLTEx
 add_product(phaseII_products,"trksv72","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV72")
 add_product(phaseII_products,"hglayerclus","std::vector<reco::CaloCluster>","hltEgammaHLTPhase2Extra:hgcalLayerClusters")
 add_product(phaseII_products,"hgpfclus","std::vector<reco::PFCluster>","hltEgammaHLTExtra:Hgcal")
+add_product(phaseII_products,"ecalpfclus","std::vector<reco::PFCluster>","hltEgammaHLTExtra:Ecal")
+add_product(phaseII_products,"hcalpfclus","std::vector<reco::PFCluster>","hltEgammaHLTExtra:Hcal")
 add_product(phaseII_products,"trig_res","edm::TriggerResults","TriggerResults::HLTX")
 add_product(phaseII_products,"l1tkeles_eb","std::vector<l1t::TkElectron>","L1TkElectronsEllipticMatchCrystal:EG")
 add_product(phaseII_products,"l1tkeles_hgcal","std::vector<l1t::TkElectron>","L1TkElectronsEllipticMatchHGC:EG")

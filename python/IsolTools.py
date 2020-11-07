@@ -9,7 +9,8 @@ import re
 import Analysis.HLTAnalyserPy.GsfTools as GsfTools
 
 # Redefined isolation variables for phase-2, 
-# more details in https://indico.cern.ch/event/962025/contributions/4088172/attachments/2135799/3597622/HLT%20Workshop%2003_11_2020.pdf
+# more details in 
+# https://indico.cern.ch/event/962025/contributions/4088172/attachments/2135799/3597622/HLT%20Workshop%2003_11_2020.pdf
 
 def get_hlt_iso(egobj,evtdata,trkcoll="trksv6",min_pt=1.,max_dz=0.15,min_deta=0.01,max_dr2=0.3*0.3,min_dr2=0.01*0.01):
 
@@ -79,4 +80,32 @@ def get_hgcal_iso(egobj,evtdata,min_pt=2.0,min_deta=0.0,max_dr2=0.2*0.2,min_dr2=
         if clus.seed().rawId() not in sc_seed_ids:
                 hgcal_isol+=clus.pt()
     return hgcal_isol
+
+
+def get_ecal_iso(egobj,evtdata,min_pt=0.0,min_deta=0.0,max_dr2=0.2*0.2,min_dr2=0.0*0.0):
+    ecal_isol=0
+    ele_eta = egobj.superCluster().eta()
+    ele_phi = egobj.superCluster().phi()
+    for clus in evtdata.get("ecalpfclus"):
+        if clus.pt()<min_pt: continue
+        if abs(clus.eta()-ele_eta)<min_deta: continue
+        dr2 = ROOT.reco.deltaR2(ele_eta,ele_phi,clus.eta(),clus.phi())
+        if dr2>max_dr2 or dr2<min_dr2: continue
+        sc_seed_ids = [c.seed().rawId() for c in egobj.superCluster().clusters()]
+        if clus.seed().rawId() not in sc_seed_ids:
+                ecal_isol+=clus.pt()
+    return ecal_isol
+
+
+def get_hcal_iso(egobj,evtdata,min_pt=2.0,min_deta=0.0,max_dr2=0.3*0.3,min_dr2=0.05*0.05):
+    hcal_isol=0
+    ele_eta = egobj.superCluster().eta()
+    ele_phi = egobj.superCluster().phi()
+    for clus in evtdata.get("hcalpfclus"):
+        if clus.pt()<min_pt: continue
+        if abs(clus.eta()-ele_eta)<min_deta: continue
+        dr2 = ROOT.reco.deltaR2(ele_eta,ele_phi,clus.eta(),clus.phi())
+        if dr2>max_dr2 or dr2<min_dr2: continue
+        hcal_isol+=clus.pt()
+    return hcal_isol
 
