@@ -109,3 +109,25 @@ def get_hcal_iso(egobj,evtdata,min_pt=2.0,min_deta=0.0,max_dr2=0.3*0.3,min_dr2=0
         hcal_isol+=clus.pt()
     return hcal_isol
 
+
+# hcal depth vars, for H/E
+# this is not strictly isolation, but still adding in IsolTools, if needed can move to separate file later
+def get_hcalen_depth(egobj,evtdata,depth=1):
+    seed_id = egobj.superCluster().seed().seed() # get seed crystal
+    if seed_id.subdetId()!=1: # if seed crystal not in barrel, return 0.  
+        return 0.0
+    seed_ebid = ROOT.EBDetId(seed_id)
+    seed_tower_ieta = seed_ebid.tower_ieta() # hcal tower behind seed crystal
+    seed_tower_iphi = seed_ebid.tower_iphi()
+    H_d1=H_d2=H_d3=H_d4=0.0
+    for hit in evtdata.get("hcalhits"):
+        if hit.id().ieta()==seed_tower_ieta and hit.id().iphi()==seed_tower_iphi:
+            if (hit.id().depth() == 1): H_d1  += hit.energy()
+            elif (hit.id().depth() == 2): H_d2  += hit.energy()
+            elif (hit.id().depth() == 3): H_d3  += hit.energy()
+            elif (hit.id().depth() == 4): H_d4  += hit.energy()
+    if depth==1: return H_d1
+    elif depth==2: return H_d2
+    elif depth==3: return H_d3
+    elif depth==4: return H_d4
+    elif depth<1 or depth>4: return 0.
