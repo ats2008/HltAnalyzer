@@ -12,6 +12,7 @@ import Analysis.HLTAnalyserPy.HistTools as HistTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
 import Analysis.HLTAnalyserPy.GsfTools as GsfTools
 import Analysis.HLTAnalyserPy.IsolTools as IsolTools
+import Analysis.HLTAnalyserPy.PixelmatchTools as PixelmatchTools
 from Analysis.HLTAnalyserPy.Trees import EgHLTTree
 
 def fix_hgcal_hforhe(obj,evtdata):
@@ -69,6 +70,7 @@ def main():
         'hcalH_dep2/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=2)),
         'hcalH_dep3/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=3)),
         'hcalH_dep4/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=4)),
+        'pms2/F' : PixelmatchTools.get_pms2_phase2,
     })
     eghlt_tree.add_eg_update_funcs([
         CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
