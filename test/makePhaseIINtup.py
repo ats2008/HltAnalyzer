@@ -12,6 +12,7 @@ import Analysis.HLTAnalyserPy.HistTools as HistTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
 import Analysis.HLTAnalyserPy.GsfTools as GsfTools
 import Analysis.HLTAnalyserPy.IsolTools as IsolTools
+import Analysis.HLTAnalyserPy.PixelMatchTools as PixelMatchTools
 from Analysis.HLTAnalyserPy.Trees import EgHLTTree
 
 def fix_hgcal_hforhe(obj,evtdata):
@@ -45,14 +46,31 @@ def main():
 
     out_file = ROOT.TFile(args.out_filename,"RECREATE")
     eghlt_tree = EgHLTTree('egHLTTree',args.min_et,weights)
+
+    # for each redefined variable, also add _validation branch, 
+    # as a sanity check that our functions can reproduce default variables
     eghlt_tree.add_eg_vars({
         'hForHoverE/F' : get_h_for_he,
         'hSumForHoverE/F' : get_hsum_for_he,
         'nLayerIT/I' : GsfTools.get_nlayerpix_gsf,
         'nLayerOT/I' : GsfTools.get_nlayerstrip_gsf,
         'normChi2/F' : GsfTools.get_normchi2_gsf,
-        'hltiso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv6")),
-        'l1iso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_l1_iso,evtdata))
+        'hltisov6/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv6")),
+        'hltisov6_validation/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv6",min_pt=1.0,max_dz=0.15,min_deta=0.01,max_dr2=0.2*0.2,min_dr2=0.03*0.03)),
+        'hltisov72/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv72")),
+        'hltisov72_validation/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv72",min_pt=1.0,max_dz=0.15,min_deta=0.01,max_dr2=0.2*0.2,min_dr2=0.03*0.03)),
+        'l1iso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_l1_iso,evtdata)),
+        'hgcaliso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso,evtdata)),
+        'hgcaliso_validation/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso,evtdata,min_pt=0.0,min_deta=0.0,max_dr2=0.3*0.3,min_dr2=0.0*0.0)),
+        'ecaliso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_ecal_iso,evtdata)),
+        'ecaliso_validation/F' : CoreTools.UnaryFunc(partial(IsolTools.get_ecal_iso,evtdata,min_pt=0.0,min_deta=0.0,max_dr2=0.3*0.3,min_dr2=0.0*0.0)),
+        'hcaliso/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcal_iso,evtdata)),
+        'hcaliso_validation/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcal_iso,evtdata,min_pt=0.0,min_deta=0.0,max_dr2=0.3*0.3,min_dr2=0.0*0.0)),
+        'hcalH_dep1/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=1)),
+        'hcalH_dep2/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=2)),
+        'hcalH_dep3/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=3)),
+        'hcalH_dep4/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=4)),
+        'pms2/F' : PixelMatchTools.get_pms2_phase2,
     })
     eghlt_tree.add_eg_update_funcs([
         CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
