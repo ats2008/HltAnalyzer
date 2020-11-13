@@ -67,6 +67,7 @@ def process_histcoll(hists,collname,canvases_to_draw):
     html_intro = ["<h2>{} Cut Summary</h2>".format(collname)]
     html_dist_hists = ["<h2>{} Distributions</h2>".format(collname)]
     html_eff_hists = ["<h2>{} Efficiencies</h2>".format(collname)]
+    html_toteff_hists = []
     # toc=[] #need to fix
     prev_hists = None
     for cut in hists:
@@ -74,9 +75,11 @@ def process_histcoll(hists,collname,canvases_to_draw):
         if prev_hists:
             html_eff_hists.append("<h3>{} Cut Efficiency w.r.t Previous Cut</h3>".format(cut.cutName()))
             html_eff_hists.append("sel: {}<br>".format(cut.cutStr().replace("\n","<br>")))
+            html_toteff_hists=["<h3>{} Cut Efficiency w.r.t {} Cut</h3>".format(cut.cutName(),hists[0].cutName())]
+            
         html_dist_hists.append("<h3>Distributions after Applying {} Cut</h3>".format(cut.cutName()))
         html_dist_hists.append("sel: {}<br>".format(cut.cutStr().replace("\n","<br>")))
-
+        
         for histindx,(varname,hist) in enumerate(cut.hists()):
             hist.SetLineColor(1)
             hist.SetMarkerStyle(8) 
@@ -89,7 +92,7 @@ def process_histcoll(hists,collname,canvases_to_draw):
             
             if prev_hists:
                 
-                effhist= hist.Clone("{}Eff".format(hist.GetName()))
+                effhist= hist.Clone("{}IncEff".format(hist.GetName()))
                 effhist.Sumw2()
                 effhist.SetDirectory(0)
                 effhist.Divide(effhist,prev_hists[histindx].second.GetPtr(),1,1,"B")
@@ -100,6 +103,20 @@ def process_histcoll(hists,collname,canvases_to_draw):
                 c1.Write()
                 canvases_to_draw.append(canvas_name)            
                 html_eff_hists.append('<div id="{name}" style="width:400px; height:300px; display:inline-block"></div>'.format(name=canvas_name))
+
+                efftothist= hist.Clone("{}Eff".format(hist.GetName()))
+                efftothist.Sumw2()
+                efftothist.SetDirectory(0)
+                efftothist.Divide(efftothist,hists[0].hists()[histindx].second.GetPtr(),1,1,"B")
+                efftothist.GetYaxis().SetTitle("Efficiency w.r.t {}".format(cut.hists()[0].first))
+                canvas_name = "{}Canvas".format(efftothist.GetName())
+                c1 = ROOT.TCanvas(canvas_name,"c1",900,600)
+                efftothist.Draw("EP")
+                c1.Write()
+                canvases_to_draw.append(canvas_name)  
+
+                html_toteff_hists.append('<div id="{name}" style="width:400px; height:300px; display:inline-block"></div>'.format(name=canvas_name))
+        html_eff_hists.extend(html_toteff_hists)
         prev_hists = cut.hists()
 
     return "\n".join(html_intro),"\n".join(html_eff_hists),"\n".join(html_dist_hists)
