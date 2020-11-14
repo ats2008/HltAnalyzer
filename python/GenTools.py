@@ -48,14 +48,14 @@ def genparts_to_str(genparts,max_to_print=20):
 def get_lastcopy_prefsr(part):
     daughters = part.daughterRefVector()
     if daughters.size()==1 and daughters[0].pdgId()==part.pdgId():
-        return get_lastcopy_prefsr(daughters[0])
+        return get_lastcopy_prefsr(daughters[0].get())
     else:
         return part
     
 def get_lastcopy(part):
     for daughter in part.daughterRefVector():
         if daughter.pdgId() == part.pdgId():
-            return get_lastcopy(daughter)
+            return get_lastcopy(daughter.get())
     return part
 
 def get_genparts(genparts,pid=11,antipart=True,status=PartStatus.PREFSR):
