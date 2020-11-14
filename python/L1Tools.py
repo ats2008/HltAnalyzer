@@ -7,9 +7,9 @@ import re
 
 def pass_eg_qual(l1obj):
     if abs(l1obj.eta())<1.479:
-        return (l1obj.hwQual()&0x2)!=0
+        return (l1obj.EGRef().hwQual()&0x2)!=0
     else:
-        return l1obj.hwQual()==5
+        return l1obj.EGRef().hwQual()==5
 
 def pass_ele_isol(l1obj):
     if abs(l1obj.eta())<1.479:

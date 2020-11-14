@@ -95,7 +95,7 @@ class EgHLTTree:
             'et/F' : UnaryFunc("et()"),
             'eta/F' : UnaryFunc("eta()"),
             'phi/F' : UnaryFunc("phi()"),
-            'hwQual/F' : UnaryFunc("hwQual()"),
+            'hwQual/F' : UnaryFunc("EGRef().hwQual()"),
             'trkIsol/F' : UnaryFunc('trkIsol()'),
             'trkIsolPV/F' : UnaryFunc('trkIsolPV()'),
             'passQual/b' : L1Tools.pass_eg_qual,
