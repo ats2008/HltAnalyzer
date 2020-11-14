@@ -161,7 +161,9 @@ class EgHLTTree:
             for var_ in self.egobj_vars:                
                 var_.fill(obj,objnr)
             gen_obj = GenTools.match_to_gen(obj.eta(),obj.phi(),genparts)[0]
+
             if gen_obj:
+                print(" gen ",gen_obj.et())
                 for var_ in self.gen_vars:
                     var_.fill(gen_obj,objnr)
 
