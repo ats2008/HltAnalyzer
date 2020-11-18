@@ -55,6 +55,7 @@ def main():
         'nLayerIT/I' : GsfTools.get_nlayerpix_gsf,
         'nLayerOT/I' : GsfTools.get_nlayerstrip_gsf,
         'normChi2/F' : GsfTools.get_normchi2_gsf,
+        'nGsf/I' : GsfTools.get_ngsf,
         'hltisov6/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv6")),
         'hltisov6_validation/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv6",min_pt=1.0,max_dz=0.15,min_deta=0.01,max_dr2=0.2*0.2,min_dr2=0.03*0.03)),
         'hltisov72/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hlt_iso,evtdata,trkcoll="trksv72")),
