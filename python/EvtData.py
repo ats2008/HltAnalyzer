@@ -128,6 +128,10 @@ class PtBinnedSample:
         self.mu_filt_eff = 0.
 
 class QCDWeightCalc:
+    """ 
+    translation  of Christian Veelken's mcStiching
+    https://github.com/veelken/mcStitching
+    """
     def __init__(self,ptbinned_samples):
         self.bx_freq = 30000000.0
         self.bins = [PtBinnedSample(**x) for x in ptbinned_samples]
