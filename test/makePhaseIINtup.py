@@ -72,6 +72,8 @@ def main():
         'hcalH_dep3/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=3)),
         'hcalH_dep4/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=4)),
         'pms2/F' : PixelMatchTools.get_pms2_phase2,
+        'hgcaliso_layerclus/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso_layerclus,evtdata,min_dr_had=0.0,min_dr_em=0.02,max_dr=0.2,min_energy_had=0.07,min_energy_em=0.02)),
+
     })
     eghlt_tree.add_eg_update_funcs([
         CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
