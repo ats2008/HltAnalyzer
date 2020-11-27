@@ -37,7 +37,6 @@ def main():
             print("ignoring {} as not directory".format(dir_))
                   
     script_dir = os.path.dirname(__file__)
-    print(script_dir)
     ntup_script = os.path.join(script_dir,"makePhaseIINtup.py")
     run_script = os.path.join(script_dir,"runMultiThreaded.py")
     for dir_ in dirs_to_run:
@@ -50,7 +49,7 @@ def main():
         ntupcmd = "python {ntup_script} --min_et {a.min_et} -r 5000 -w {a.weights}".format(ntup_script=ntup_script,a=args)
         input_files = glob.glob(os.path.join(dir_,"*.root"))
 
-        runcmd = ["python",run_script,"-o",out_file,"--cmd",ntupcmd,"--hadd","-t",str(args.nr_threads)]
+        runcmd = ["python",run_script,"-o",out_file,"--cmd",ntupcmd,"--hadd","-t",str(args.nr_threads),"-j",str(args.nr_threads)]
         runcmd.extend(input_files)
         
         print("running {}".format(dir_))
