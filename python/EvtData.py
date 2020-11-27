@@ -141,6 +141,7 @@ class QCDWeightCalc:
         self.bins = [PtBinnedSample(**x) for x in ptbinned_samples]
         self.bins.sort(key=lambda x: x.min_pt)
         self.bin_lowedges = [x.min_pt for x in self.bins]
+        self.bin_lowedges.append(self.bins[-1].max_pt)
         self.gen_filters = TrigTools.TrigResults(["Gen_QCDMuGenFilter",
                                                   "Gen_QCDBCToEFilter",
                                                   "Gen_QCDEmEnrichingFilter",
@@ -151,11 +152,19 @@ class QCDWeightCalc:
         tot_count= pusum_intime[0].getPU_pT_hats().size()
         for pu_pt_hat in pusum_intime[0].getPU_pT_hats():
             bin_nr = numpy.digitize(pu_pt_hat,self.bin_lowedges)
-            bin_counts[bin_nr]+=1
+            #overflow means we fill bin 0 which is the inclusive min bias bin
+            try:
+                bin_counts[bin_nr]+=1
+            except IndexError:
+                bin_counts[0]+=1
        
         geninfo = evtdata.get("geninfo")
         tot_count +=1
-        bin_counts[numpy.digitize(geninfo.qScale(),self.bin_lowedges)]+=1
+        #again like for PU, overflow means we fill bin 0 which is the inclusive min bias bin
+        try:
+            bin_counts[numpy.digitize(geninfo.qScale(),self.bin_lowedges)]+=1
+        except IndexError:
+            bin_counts[0]+=1
         
         min_bias_xsec = self.bins[0].xsec
 
