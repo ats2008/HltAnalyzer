@@ -68,12 +68,14 @@ class EvtData:
             return None
            
 class EvtWeights:
-    def __init__(self,input_filename,corr_for_pu=False,lumi=0.075):
+    def __init__(self,input_filename=None,input_dict=None,corr_for_pu=False,lumi=0.075):
         if input_filename: 
             with open(input_filename,'r') as f:
                 self.data = json.load(f)
+        elif input_dict:
+            self.data = dict(input_dict)
         else:
-            self.data = {}            
+            self.data = {}
         self.warned = []
         self.corr_for_pu = corr_for_pu
         self.lumi = lumi #luminosity to weight to in pb
@@ -126,14 +128,16 @@ class PtBinnedSample:
         self.em_filt_eff = em_filt_eff
         self.nr_mu = 0.
         self.mu_filt_eff = 0.
+        print("{}-{} {} {}".format(min_pt,max_pt,xsec,nr_inclusive)) 
 
 class QCDWeightCalc:
     """ 
-    translation  of Christian Veelken's mcStiching
+    translation of Christian Veelken's mcStiching
     https://github.com/veelken/mcStitching
     """
-    def __init__(self,ptbinned_samples):
-        self.bx_freq = 30000000.0
+    def __init__(self,ptbinned_samples,bx_freq=30000000.0,nr_expt_pu=200):
+        self.bx_freq = bx_freq
+        self.nr_expt_pu = nr_expt_pu
         self.bins = [PtBinnedSample(**x) for x in ptbinned_samples]
         self.bins.sort(key=lambda x: x.min_pt)
         self.bin_lowedges = [x.min_pt for x in self.bins]
@@ -151,14 +155,14 @@ class QCDWeightCalc:
        
         geninfo = evtdata.get("geninfo")
         tot_count +=1
-        bin_counts[numpy.digitize(geninfo.qScale(),self.bin_lowedges)]+1
+        bin_counts[numpy.digitize(geninfo.qScale(),self.bin_lowedges)]+=1
         
         min_bias_xsec = self.bins[0].xsec
 
         expect_events_mc = 0
         for bin_nr,sample_bin in enumerate(self.bins):
             bin_frac = bin_counts[bin_nr+1]/tot_count
-            theory_frac =  sample_bin.xsec / min_bias_xsec
+            theory_frac =  sample_bin.xsec / (self.nr_expt_pu * min_bias_xsec)
             #dont correct inclusively generated sample
             prob_corr = bin_frac / theory_frac if bin_nr!=0 else 1.
             expect_events_mc += sample_bin.nr_inclusive * prob_corr
