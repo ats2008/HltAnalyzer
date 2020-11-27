@@ -139,23 +139,16 @@ class UnaryFunc:
             raise ValueError("error, func_type {} not known".func_type)
 
 
-'''
-In phaseII L1 electron collection, there are multiple copies of presumably same L1 electron 
-with slightly different (or sometimes exactly same) eta/phi but different hwQual. 
-If we take the L1 ele doing best dR match, or if we take the first L1 ele that is within dR<dr_val, 
-we will most often pick up the one with wrong hwQual value, thus hwQual==5 criteria for endcap often fails.
-One way to solve this is to check dR match and hwQual simultaneously.   
-'''
 def get_best_dr_match(obj_to_match,coll,max_dr):
+    best_dr2 = max_dr*max_dr
     matched_obj = None
     eta = obj_to_match.eta()
     phi = obj_to_match.phi()
     for obj in coll:
         dr2 = ROOT.reco.deltaR2(eta,phi,obj.eta(),obj.phi())
-        if dr2 < max_dr*max_dr:
-            if ( ( abs(obj.eta())<1.479 and (obj.EGRef().hwQual()&0x2)!=0 )  or ( abs(obj.eta())>1.479 and abs(obj.eta())<2.4  and obj.EGRef().hwQual()==5 )  ) :
-               matched_obj = obj
-               break
+        if dr2 < best_dr2:
+            best_dr2 = dr2
+            matched_obj = obj
     return matched_obj
         
             

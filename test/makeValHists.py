@@ -47,10 +47,15 @@ def make_val_hists(in_filenames,out_name):
     for event_nr,event in enumerate(events):
         if event_nr%500==0:
             print("processing event {} / {}".format(event_nr,nr_events))
+     
         evtdata.get_handles(event)
+
+        gen_eles = GenTools.get_genparts(evtdata.get("genparts"),pid=11,antipart=True,
+                                         status=GenTools.PartStatus.PREFSR)
+        
         for egobj in evtdata.get("egtrigobjs"):
             egobj.et_gen = -1
-            gen_match = GenTools.match_to_gen(egobj.eta(),egobj.phi(),evtdata.get("genparts"),pid=11)[0]
+            gen_match = CoreTools.get_best_dr_match(egobj,gen_eles,0.1)
             if gen_match:
                 egobj.et_gen = gen_match.pt()
                 hists_genmatch.fill(egobj,weight)

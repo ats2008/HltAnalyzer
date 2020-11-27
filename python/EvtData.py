@@ -6,6 +6,8 @@ from DataFormats.FWLite import Events, Handle
 
 import json
 import re
+import Analysis.HLTAnalyserPy.TrigTools as TrigTools
+import numpy
 
 class HandleData(Handle):
     def __init__(self,product,label):
@@ -66,12 +68,14 @@ class EvtData:
             return None
            
 class EvtWeights:
-    def __init__(self,input_filename,corr_for_pu=False,lumi=0.075):
+    def __init__(self,input_filename=None,input_dict=None,corr_for_pu=False,lumi=0.075):
         if input_filename: 
             with open(input_filename,'r') as f:
-                self.data = json.load(f)
+                self.data = json.load(f)['v1']
+        elif input_dict:
+            self.data = dict(input_dict)
         else:
-            self.data = {}            
+            self.data = {}
         self.warned = []
         self.corr_for_pu = corr_for_pu
         self.lumi = lumi #luminosity to weight to in pb
@@ -113,6 +117,82 @@ class EvtWeights:
             else:       
                 return 1./frac_pu_with_lt_pthat[sample_min_pt_hat]
 
+class PtBinnedSample:
+
+    def __init__(self,min_pt,max_pt,xsec,nr_inclusive,nr_em,em_filt_eff):
+        self.min_pt = min_pt
+        self.max_pt = max_pt
+        self.xsec = xsec
+        self.nr_inclusive = nr_inclusive
+        self.nr_em = nr_em
+        self.em_filt_eff = em_filt_eff
+        self.nr_mu = 0.
+        self.mu_filt_eff = 0.
+        print("{}-{} {} {}".format(min_pt,max_pt,xsec,nr_inclusive)) 
+
+class QCDWeightCalc:
+    """ 
+    translation of Christian Veelken's mcStiching
+    https://github.com/veelken/mcStitching
+    """
+    def __init__(self,ptbinned_samples,bx_freq=30000000.0,nr_expt_pu=200):
+        self.bx_freq = bx_freq
+        self.nr_expt_pu = nr_expt_pu
+        self.bins = [PtBinnedSample(**x) for x in ptbinned_samples]
+        self.bins.sort(key=lambda x: x.min_pt)
+        self.bin_lowedges = [x.min_pt for x in self.bins]
+        self.bin_lowedges.append(self.bins[-1].max_pt)
+        self.gen_filters = TrigTools.TrigResults(["Gen_QCDMuGenFilter",
+                                                  "Gen_QCDBCToEFilter",
+                                                  "Gen_QCDEmEnrichingFilter",
+                                                  "Gen_QCDEmEnrichingNoBCToEFilter"])
+    def weight(self,evtdata):
+        pusum_intime = [x for x in evtdata.get("pu_sum") if x.getBunchCrossing()==0]
+        bin_counts = [0]*(len(self.bins)+1)
+        tot_count= pusum_intime[0].getPU_pT_hats().size()
+        for pu_pt_hat in pusum_intime[0].getPU_pT_hats():
+            bin_nr = numpy.digitize(pu_pt_hat,self.bin_lowedges)
+            #overflow means we fill bin 0 which is the inclusive min bias bin
+            try:
+                bin_counts[bin_nr]+=1
+            except IndexError:
+                bin_counts[0]+=1
+       
+        geninfo = evtdata.get("geninfo")
+        tot_count +=1
+        #again like for PU, overflow means we fill bin 0 which is the inclusive min bias bin
+        try:
+            bin_counts[numpy.digitize(geninfo.qScale(),self.bin_lowedges)]+=1
+        except IndexError:
+            bin_counts[0]+=1
+        
+        min_bias_xsec = self.bins[0].xsec
+
+        expect_events_mc = 0
+        for bin_nr,sample_bin in enumerate(self.bins):
+            bin_frac = bin_counts[bin_nr+1]/tot_count
+            theory_frac =  sample_bin.xsec / (self.nr_expt_pu * min_bias_xsec)
+            #dont correct inclusively generated sample
+            prob_corr = bin_frac / theory_frac if bin_nr!=0 else 1.
+            expect_events_mc += sample_bin.nr_inclusive * prob_corr
+            
+        weight = self.bx_freq / expect_events_mc
+
+#        is_em = gen_filters.result()
+#        is_mu = gen_filters.result()
+
+
+        return weight
+
+
+        
+        
+            
+        
+        
+    
+
+
 def get_objs(evtdata,events,objname,indx):
     """
     A small helper function to save typing out this commands each time
@@ -153,3 +233,5 @@ add_product(phaseII_products,"l1tkphos_hgcal","std::vector<l1t::TkEm>","L1TkPhot
 add_product(phaseII_products,"l1egs_eb","BXVector<l1t::EGamma>","L1EGammaClusterEmuProducer")
 add_product(phaseII_products,"l1egs_hgcal","BXVector<l1t::EGamma>","l1EGammaEEProducer:L1EGammaCollectionBXVWithCuts")
 add_product(phaseII_products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
+add_product(phaseII_products,"hghadpfclus","std::vector<reco::PFCluster>","hltEgammaHLTExtra:HgcalHAD")
+add_product(phaseII_products,"geninfo","GenEventInfoProduct","generator")
