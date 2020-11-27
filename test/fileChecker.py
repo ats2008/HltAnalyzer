@@ -20,11 +20,15 @@ def process_dir(dir_,proc_name="HLTX"):
         if not root_file or root_file.IsZombie() or root_file.TestBit(ROOT.TFile.kRecovered):
             bad_files.append(str(file_))
         else:
-            good_files.append(str(file_))
-            nr_pass += root_file.Events.GetEntries()
-            root_file.Runs.GetEntry(0)
-            nr_tot += getattr(root_file.Runs,"edmMergeableCounter_hltNrInputEvents_nrEventsRun_{proc_name}".format(proc_name=proc_name)).value
-        
+            try:
+                
+                nr_pass += root_file.Events.GetEntries()
+                root_file.Runs.GetEntry(0)
+                nr_tot += getattr(root_file.Runs,"edmMergeableCounter_hltNrInputEvents_nrEventsRun_{proc_name}".format(proc_name=proc_name)).value
+                good_files.append(str(file_))
+            except AttributeError:
+                bad_files.append(str(file_))
+
     return {"nr_pass" : nr_pass,"nr_tot" : nr_tot,
             "good_files" : good_files,"bad_files" : bad_files}
     
@@ -228,9 +232,9 @@ if __name__ == "__main__":
         json.dump(weights_dict,f)
 
     for name,data in job_data.iteritems():
-        with open("{}.list","w") as f:
+        with open("{}.list".format(name),"w") as f:
             for filename in data['job_stats']['good_files']:
-                f.write(filename"+\n")
+                f.write(filename+"\n")
                 
 
     if args.clean:
