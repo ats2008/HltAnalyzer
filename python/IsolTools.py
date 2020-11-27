@@ -81,6 +81,14 @@ def get_hgcal_iso(egobj,evtdata,min_pt=2.0,min_deta=0.0,max_dr2=0.2*0.2,min_dr2=
                 hgcal_isol+=clus.pt()
     return hgcal_isol
 
+# hgcal isolation based on 2D layer clusters
+def get_hgcal_iso_layerclus(egobj,evtdata,min_dr_had=0.0,min_dr_em=0.02,max_dr=0.2,min_energy_had=0.07,min_energy_em=0.02):
+    layerclus = evtdata.get("hglayerclus")
+    hgcal_isol_had = ROOT.HGCalClusterTools.hadEnergyInCone(egobj.eta(),egobj.phi(),layerclus,min_dr_had,max_dr,0.0,min_energy_had)
+    hgcal_isol_em   = ROOT.HGCalClusterTools.emEnergyInCone(egobj.eta(),egobj.phi(),layerclus,min_dr_em, max_dr,0.0,min_energy_em)
+    hgcal_isol = hgcal_isol_had + hgcal_isol_em
+    return hgcal_isol
+
 
 def get_ecal_iso(egobj,evtdata,min_pt=0.0,min_deta=0.0,max_dr2=0.2*0.2,min_dr2=0.0*0.0):
     ecal_isol=0

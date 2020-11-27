@@ -44,3 +44,7 @@ def get_normchi2_gsf(egobj):
     else:
         indx_bestgsf=get_indx_best_gsf(egobj)
         return egobj.gsfTracks()[indx_bestgsf].normalizedChi2() 
+
+def get_ngsf(egobj):
+    return len(egobj.gsfTracks())
+
