@@ -155,7 +155,8 @@ if __name__ == "__main__":
 
     #note there is a syntax where at the end of the variable you put {} which is then internally replaced as approprate. This is for all variables
     
-    ebCutFlow = ROOT.FiltFuncs.CutFlow("eb",1)    
+    ebCutFlow = ROOT.FiltFuncs.CutFlow("eb",1) 
+    
     ebCutFlow.addHist1D("etHist",";E_{T} [GeV];# events",100,0,100,"eg_et{}")
     ebCutFlow.addHist1D("etaHist",";#eta;# events",60,-3.,3,"eg_eta{}")
     ebCutFlow.addHist1D("phiHist",";#phi [rad];# events",64,-3.2,3.2,"eg_phi{}")
@@ -244,7 +245,7 @@ if __name__ == "__main__":
 
     #now we are making our summary website
     if not os.path.isdir(args.outdir):
-        shutil.maketree(args.outdir)
+        os.mkdir(args.outdir)
 
     output_root = ROOT.TFile.Open(os.path.join(args.outdir,"output.root"),"RECREATE")
     html_str = make_webpage_html(hists_eb,hists_ee)
