@@ -330,8 +330,8 @@ if __name__ == "__main__":
     CoreTools.load_fwlitelibs()
 
     parser = argparse.ArgumentParser(description='example e/gamma HLT analyser')
-    parser.add_argument('--ref',help='reference filename')
-    parser.add_argument('--tar',help='target filename')
+    parser.add_argument('--ref',required=True,help='reference filename')
+    parser.add_argument('--tar',required=True,help='target filename')
     parser.add_argument('--out_dir','-o',default="./",help='output dir')
     parser.add_argument('--tar_label',default="tar",help="target label for leg")
     parser.add_argument('--ref_label',default="ref",help="reference label for leg")
