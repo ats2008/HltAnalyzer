@@ -58,7 +58,7 @@ class EgHLTTree:
             'invEInvP/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP",0)),
             'trkDEta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Deta",0)),
             'trkDEtaSeed/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_DetaSeed",0)),
-            'trkDPhi/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_DetaSeed",0)),
+            'trkDPhi/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Dphi",0)),
             'rVar/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_rVar',0)),
             'sigma2uu/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2uu',0)),
             'sigma2vv/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2vv',0)),
@@ -80,6 +80,7 @@ class EgHLTTree:
             self.egobj_vars.append(TreeVar(self.tree,"eg_"+name,func,max_egs,egobjnr_name))
             
         gen_vars_names = {
+            'energy/F' : UnaryFunc(partial(ROOT.reco.GenParticle.energy)),
             'pt/F' : UnaryFunc(partial(ROOT.reco.GenParticle.pt)),
             'et/F' : UnaryFunc(partial(ROOT.reco.GenParticle.et)),
             'eta/F' : UnaryFunc(partial(ROOT.reco.GenParticle.eta)),
