@@ -156,11 +156,15 @@ class EgHLTTree:
         for var_ in itertools.chain(self.gen_vars,self.l1pho_vars,self.l1ele_vars):
             var_.clear()
         
-
+        gen_eles = GenTools.get_genparts(self.evtdata.get("genparts"),
+                                         pid=11,antipart=True,
+                                         status=GenTools.PartStatus.PREFSR)
+       
         for objnr,obj in enumerate(egobjs):
             for var_ in self.egobj_vars:                
                 var_.fill(obj,objnr)
-            gen_obj = GenTools.match_to_gen(obj.eta(),obj.phi(),genparts)[0]
+
+            gen_obj = CoreTools.get_best_dr_match(obj,gen_eles,0.1)
             if gen_obj:
                 for var_ in self.gen_vars:
                     var_.fill(gen_obj,objnr)
