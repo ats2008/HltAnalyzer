@@ -71,7 +71,7 @@ class EvtWeights:
     def __init__(self,input_filename=None,input_dict=None,corr_for_pu=False,lumi=0.075):
         if input_filename: 
             with open(input_filename,'r') as f:
-                self.data = json.load(f)
+                self.data = json.load(f)['v1']
         elif input_dict:
             self.data = dict(input_dict)
         else:

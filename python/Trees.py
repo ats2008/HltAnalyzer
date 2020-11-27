@@ -161,6 +161,8 @@ class EgHLTTree:
                                          pid=11,antipart=True,
                                          status=GenTools.PartStatus.PREFSR)
        
+        good_l1phos = [obj for obj in l1phos if L1Tools.pass_eg_qual(obj) ]
+
         for objnr,obj in enumerate(egobjs):
             for var_ in self.egobj_vars:                
                 var_.fill(obj,objnr)
@@ -170,7 +172,7 @@ class EgHLTTree:
                 for var_ in self.gen_vars:
                     var_.fill(gen_obj,objnr)
 
-            l1pho_obj = CoreTools.get_best_dr_match(obj,l1phos,0.2)
+            l1pho_obj = CoreTools.get_best_dr_match(obj,good_l1phos,0.2)
             l1ele_obj = L1Tools.get_l1ele_from_l1pho(l1pho_obj,l1eles) if l1pho_obj else None
             if l1pho_obj:
                 for var_ in self.l1pho_vars:
