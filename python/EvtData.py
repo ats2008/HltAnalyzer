@@ -125,6 +125,8 @@ class PtBinnedSample:
         self.xsec = xsec
         self.nr_inclusive = nr_inclusive
         self.nr_em = nr_em
+        self.nr_em_expect = 0
+        self.nr_em_actual = 0
         self.em_filt_eff = em_filt_eff
         self.nr_mu = 0.
         self.mu_filt_eff = 0.
@@ -135,9 +137,10 @@ class QCDWeightCalc:
     translation of Christian Veelken's mcStiching
     https://github.com/veelken/mcStitching
     """
-    def __init__(self,ptbinned_samples,bx_freq=30000000.0,nr_expt_pu=200):
+    def __init__(self,ptbinned_samples,bx_freq=30000000.0,nr_expt_pu=200,use_em_filt=True):
         self.bx_freq = bx_freq
-        self.nr_expt_pu = nr_expt_pu
+        self.use_em_filt = use_em_filt
+        #self.nr_expt_pu = nr_expt_pu
         self.bins = [PtBinnedSample(**x) for x in ptbinned_samples]
         self.bins.sort(key=lambda x: x.min_pt)
         self.bin_lowedges = [x.min_pt for x in self.bins]
@@ -146,6 +149,14 @@ class QCDWeightCalc:
                                                   "Gen_QCDBCToEFilter",
                                                   "Gen_QCDEmEnrichingFilter",
                                                   "Gen_QCDEmEnrichingNoBCToEFilter"])
+        #now we get the number of EM events (skip bin 0 which is  minbias)
+        min_bias = self.bins[0]
+        for bin_ in self.bins[1:]:
+            nr_em_mb = min_bias.nr_inclusive*bin_.xsec/min_bias.xsec * bin_.em_filt_eff
+            nr_em_qcd_inc  = bin_.nr_inclusive*bin_.em_filt_eff
+            bin_.nr_em_expect = nr_em_mb + nr_em_qcd_inc
+            bin_.nr_em_actual = nr_em_mb + nr_em_qcd_inc + bin_.nr_em
+
     def weight(self,evtdata):
         pusum_intime = [x for x in evtdata.get("pu_sum") if x.getBunchCrossing()==0]
         bin_counts = [0]*(len(self.bins)+1)
@@ -171,27 +182,51 @@ class QCDWeightCalc:
         expect_events_mc = 0
         for bin_nr,sample_bin in enumerate(self.bins):
             bin_frac = bin_counts[bin_nr+1]/tot_count
-            theory_frac =  sample_bin.xsec / (self.nr_expt_pu * min_bias_xsec)
+            theory_frac =  sample_bin.xsec / min_bias_xsec
             #dont correct inclusively generated sample
             prob_corr = bin_frac / theory_frac if bin_nr!=0 else 1.
             expect_events_mc += sample_bin.nr_inclusive * prob_corr
             
         weight = self.bx_freq / expect_events_mc
 
-#        is_em = gen_filters.result()
-#        is_mu = gen_filters.result()
-
+        if self.use_em_filt:
+            is_em = self.gen_filters.result("Gen_QCDEmEnrichingFilter") and not gen_filters.result("Gen_QCDBCToEFilter")
+            if is_em:
+                sample_nr = numpy.digitize(geninfo.qScale(),self.bin_lowedges)
+                sample_nr = sample_nr if sample_nr < len(self.bins) else 0
+                bin_ = self.bins[sample_nr] 
+                if bin_.nr_em_tot!=0:
+                    weight *= bin_.nr_em_expect/bin_.nr_em_tot
 
         return weight
 
-
-        
-        
+class EvtWeightsV2:
+    def __init__(self,input_filename=None,input_dict=None,use_em_filt=False,bx_freq=30.0E6,nr_expt_pu=200,mb_xsec = 80.0E9):
+        if input_filename: 
+            with open(input_filename,'r') as f:
+                self.data = json.load(f)
+        elif input_dict:
+            self.data = dict(input_dict)
+        else:
+            self.data = {}
             
-        
-        
+        self.warned = []
+        self.use_emfilt = use_em_filt
+        self.lumi = bx_freq * nr_expt_pu / mb_xsec
+        if self.data:
+            self.qcd_weights = QCDWeightCalc(self.data['v2']['qcd'],bx_freq,nr_expt_pu,use_em_filt=use_em_filt)
+            self.weights_v1 = EvtWeights(input_dict=self.data['v1'])
     
+    def weight_from_name(self,dataset_name,evtdata):        
+        if dataset_name.startswith("QCD") or dataset_name.startswith("MinBias")!=-1:
+            return self.qcd_weights.weight(evtdata)
+        else:          
+            return self.weights_v1.weight_from_name(dataset_name,evtdata)
 
+    def weight_from_evt(self,evtdata):
+        filename = evtdata.event.object().getTFile().GetName().split("/")[-1]
+        dataset_name = re.search(r'(.+)(_\d+_EDM.root)',filename).groups()[0]
+        return self.weight_from_name(dataset_name,evtdata)
 
 def get_objs(evtdata,events,objname,indx):
     """
