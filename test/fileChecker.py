@@ -24,7 +24,8 @@ def process_dir(dir_,proc_name="HLTX"):
                 
                 nr_pass += root_file.Events.GetEntries()
                 root_file.Runs.GetEntry(0)
-                nr_tot += getattr(root_file.Runs,"edmMergeableCounter_hltNrInputEvents_nrEventsRun_{proc_name}".format(proc_name=proc_name)).value
+                #nr_tot += getattr(root_file.Runs,"edmMergeableCounter_hltNrInputEvents_nrEventsRun_{proc_name}".format(proc_name=proc_name)).value
+                nr_tot = nr_pass
                 good_files.append(str(file_))
             except AttributeError:
                 bad_files.append(str(file_))
@@ -58,7 +59,8 @@ def get_xsec(job_name):
         "WJetsToLNu_TuneCP5_14TeV-amcatnloFXFX-pythia8" : 56990.0,
         "DYJetsToLL_M-10to50_TuneCP5_14TeV-madgraphMLM-pythia8" : 16880.0,
         "DYToLL_M-50_TuneCP5_14TeV-pythia8" : 5795.0,
-        'DoubleElectron_FlatPt-1To100' : 1.
+        'DoubleElectron_FlatPt-1To100' : 1.,
+        'MinBias_TuneCP5_14TeV-pythia8' : 80.0E9
     }
     dataset_name = job_name.split("__")[0]
     try:
@@ -70,13 +72,13 @@ def get_xsec(job_name):
 def get_qcd_em_filt_eff(min_pt,max_pt):
     filt_effs = {
         "0to9999" : 1.0,
-        "15to20" : 1.0,
-        "20to30" : 1.0,
-        "30to50" : 1.0,
-        "50to80" : 1.0,
-        "80to120" : 1.0,
-        "120to170" : 1.0,
-        "170to300" : 1.0,
+        "15to20" : 0.001569,
+        "20to30" : 0.01232,
+        "30to50" : 0.05929,
+        "50to80" : 0.1253,
+        "80to120" : 0.1547,
+        "120to170" : 0.1634,
+        "170to300" : 0.1593,
         "300to470" : 1.0,
         "470to600" : 1.0,
         "600to9999" : 1.0,
@@ -91,7 +93,7 @@ def get_qcd_em_filt_eff(min_pt,max_pt):
 
 def get_qcd_xsec(min_pt,max_pt):
     xsecs = {
-        "0to9999" : 400000000.0,
+        "0to9999" : 80.0E9,
         "15to20" : 923300000.0,
         "20to30" : 436000000.0,
         "30to50" : 118400000.0,
@@ -200,7 +202,7 @@ def qcd_weights_v2(sample_name,sample_data,output_data):
 def gen_weight_file_v2(job_data):
     weights_dict = {"qcd" : []}
     for name,data in job_data.iteritems():
-        if name.startswith("QCD_") or name.startswith("MinimumBias"):
+        if name.startswith("QCD_") or name.startswith("MinBias_"):
             qcd_weights_v2(name,data,weights_dict['qcd'])
         else:
             weights_dict[name] =  {"nrtot": data['job_stats']['nr_tot'], "xsec": data['xsec'], "nrpass": data['job_stats']['nr_pass']}
@@ -215,7 +217,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     job_data = {}
-
+    
     for dir_ in args.dirs:
         job_name = dir_.rstrip("/").split("/")[-1]
         job_data[job_name] = {}
