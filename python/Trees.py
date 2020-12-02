@@ -5,6 +5,7 @@ import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.L1Tools as L1Tools
 from Analysis.HLTAnalyserPy.CoreTools import UnaryFunc
 from Analysis.HLTAnalyserPy.NtupTools import TreeVar
+from Analysis.HLTAnalyserPy.EvtData import EvtWeightsV2
 
 from functools import partial
 import itertools
@@ -32,9 +33,12 @@ class EgHLTTree:
             TreeVar(self.tree,"eventnr/i",UnaryFunc("eventAuxiliary().event()")),
         
         ]
+        self.evtdatavars = []
         if self.weights:
-            self.evtvars.append(TreeVar(self.tree,"weight/F",UnaryFunc(partial(self.weights.weight_from_evt,self.evtdata))))
-            
+            self.evtdatavars.append(TreeVar(self.tree,"weightV1/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V1))))
+            self.evtdatavars.append(TreeVar(self.tree,"weightV2/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V2))))
+            self.evtdatavars.append(TreeVar(self.tree,"weightV2NoEM/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V2NoEM))))
+           
         egobjnr_name = "nrEgs"
         max_egs = 100    
         self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",UnaryFunc(partial(len)))
@@ -138,6 +142,8 @@ class EgHLTTree:
 
         for var_ in self.evtvars:
             var_.fill(self.evtdata.event.object())
+        for var_ in self.evtdatavars:
+            var_.fill(self.evtdata)
             
         egobjs_raw = self.evtdata.get("egtrigobjs")
         egobjs = [eg for eg in egobjs_raw if eg.et()>self.min_et]

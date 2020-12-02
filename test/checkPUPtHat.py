@@ -21,7 +21,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='example e/gamma HLT analyser')
     parser.add_argument('in_filenames',nargs="+",help='input filename')
     parser.add_argument('--prefix','-p',default='file:',help='file prefix')
-    parser.add_argument('--em_filt','-e',action='store_true',help='uses filtered samples')
     parser.add_argument('--maxevents','-n',default=-1,type=int,help='max events, <0 is no limit')
     parser.add_argument('--verbose','-v',action='store_true',help='verbose printouts')
     parser.add_argument('--out_file','-o',default="output.root",help='output filename')
@@ -66,7 +65,7 @@ if __name__ == "__main__":
        import json
        weights = json.load(f)
 
-    qcd_weight_calc = EvtWeightsV2(input_dict=weights,use_em_filt=args.em_filt)
+    qcd_weight_calc = EvtWeightsV2(input_dict=weights)
   #  qcd_weight_calc = QCDWeightCalc(weights['v2']['qcd'],use_em_filt=args.em_filt)
     weight_calc = EvtWeights(input_dict=weights["v1"],corr_for_pu=True)
     gen_filters = TrigTools.TrigResults(["Gen_QCDMuGenFilter",
@@ -105,9 +104,10 @@ if __name__ == "__main__":
         tree_nr_pt_hats = tree_pt_hats.size()
        # tree_weight_v1[0] = weight_calc.weight_from_evt(event.object(),evtdata)
     #    tree_weight_v1[0] = evtdata.get("pu_weight")[0]
+        tree_weight_v1[0] = qcd_weight_calc.weight_from_name("QCD",evtdata,EvtWeightsV2.WeightType.V1)
         tree_weight_v2[0] = weight 
         tree_hard_pt_hat[0] = geninfo.qScale()
-        tree_emweight_v2[0] = qcd_weight_calc.qcd_weights.em_weight(evtdata)
+        tree_emweight_v2[0] = qcd_weight_calc.weight_from_name("QCD",evtdata,EvtWeightsV2.WeightType.V1)
         tree_pass_em[0] = gen_filters.result("Gen_QCDEmEnrichingFilter") and not gen_filters.result("Gen_QCDBCToEFilter")
       
         putree.Fill()
