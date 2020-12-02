@@ -163,45 +163,53 @@ class QCDWeightCalc:
         tot_count= pusum_intime[0].getPU_pT_hats().size()
         for pu_pt_hat in pusum_intime[0].getPU_pT_hats():
             bin_nr = numpy.digitize(pu_pt_hat,self.bin_lowedges)
-            #overflow means we fill bin 0 which is the inclusive min bias bin
+            #overflow means we fill bin 1 which is the inclusive min bias bin
             try:
                 bin_counts[bin_nr]+=1
             except IndexError:
-                bin_counts[0]+=1
+                bin_counts[1]+=1
        
         geninfo = evtdata.get("geninfo")
         tot_count +=1
-        #again like for PU, overflow means we fill bin 0 which is the inclusive min bias bin
+        #again like for PU, overflow means we fill bin 1 which is the inclusive min bias bin
         try:
             bin_counts[numpy.digitize(geninfo.qScale(),self.bin_lowedges)]+=1
         except IndexError:
-            bin_counts[0]+=1
+            bin_counts[1]+=1
         
         min_bias_xsec = self.bins[0].xsec
 
         expect_events_mc = 0
         for bin_nr,sample_bin in enumerate(self.bins):
-            bin_frac = bin_counts[bin_nr+1]/tot_count
-            theory_frac =  sample_bin.xsec / min_bias_xsec
+            bin_frac = float(bin_counts[bin_nr+1])/float(tot_count)
+            theory_frac =  float(sample_bin.xsec) / float(min_bias_xsec)
             #dont correct inclusively generated sample
             prob_corr = bin_frac / theory_frac if bin_nr!=0 else 1.
             expect_events_mc += sample_bin.nr_inclusive * prob_corr
             
-        weight = self.bx_freq / expect_events_mc
-
+        weight = float(self.bx_freq) / float(expect_events_mc)
         if self.use_em_filt:
-            is_em = self.gen_filters.result("Gen_QCDEmEnrichingFilter") and not gen_filters.result("Gen_QCDBCToEFilter")
-            if is_em:
-                sample_nr = numpy.digitize(geninfo.qScale(),self.bin_lowedges)
-                sample_nr = sample_nr if sample_nr < len(self.bins) else 0
-                bin_ = self.bins[sample_nr] 
-                if bin_.nr_em_tot!=0:
-                    weight *= bin_.nr_em_expect/bin_.nr_em_tot
-
+            weight *= self.em_weight(evtdata)
         return weight
 
+    def em_weight(self,evtdata):
+        geninfo = evtdata.get("geninfo")
+        self.gen_filters.fill(evtdata)
+        is_em = self.gen_filters.result("Gen_QCDEmEnrichingFilter") and not self.gen_filters.result("Gen_QCDBCToEFilter")
+        weight = 1.
+        if is_em:
+            #should never be -1 as we should never hit the underflow and if 
+            #so there is a problem
+            sample_nr = numpy.digitize(geninfo.qScale(),self.bin_lowedges)-1
+            sample_nr = sample_nr if sample_nr < len(self.bins) else 0
+            bin_ = self.bins[sample_nr] 
+            if bin_.nr_em_actual!=0:
+                weight = float(bin_.nr_em_expect)/float(bin_.nr_em_actual)
+        return weight
+
+
 class EvtWeightsV2:
-    def __init__(self,input_filename=None,input_dict=None,use_em_filt=False,bx_freq=30.0E6,nr_expt_pu=200,mb_xsec = 80.0E9):
+    def __init__(self,input_filename=None,input_dict=None,use_em_filt=True,bx_freq=30.0E6,nr_expt_pu=200,mb_xsec = 80.0E9):
         if input_filename: 
             with open(input_filename,'r') as f:
                 self.data = json.load(f)
