@@ -232,7 +232,7 @@ class EvtWeightsV2:
             self.weights_v1 = EvtWeights(input_dict=self.data['v1'])
     
     def weight_from_name(self,dataset_name,evtdata,weight_type=WeightType.V2):        
-        if not weight_type==EvtWeightsV2.WeightType.V1 and (dataset_name.startswith("QCD") or dataset_name.startswith("MinBias")!=-1):
+        if not weight_type==EvtWeightsV2.WeightType.V1 and (dataset_name.startswith("QCD") or dataset_name.startswith("MinBias")):
             use_em_filt = weight_type==EvtWeightsV2.WeightType.V2
             return self.qcd_weights.weight(evtdata,use_em_filt=use_em_filt)
         else:          

@@ -24,8 +24,7 @@ def process_dir(dir_,proc_name="HLTX"):
                 
                 nr_pass += root_file.Events.GetEntries()
                 root_file.Runs.GetEntry(0)
-                #nr_tot += getattr(root_file.Runs,"edmMergeableCounter_hltNrInputEvents_nrEventsRun_{proc_name}".format(proc_name=proc_name)).value
-                nr_tot = nr_pass
+                nr_tot += getattr(root_file.Runs,"edmMergeableCounter_hltNrInputEvents_nrEventsRun_{proc_name}".format(proc_name=proc_name)).value               
                 good_files.append(str(file_))
             except AttributeError:
                 bad_files.append(str(file_))

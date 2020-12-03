@@ -38,7 +38,12 @@ class EgHLTTree:
             self.evtdatavars.append(TreeVar(self.tree,"weightV1/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V1))))
             self.evtdatavars.append(TreeVar(self.tree,"weightV2/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V2))))
             self.evtdatavars.append(TreeVar(self.tree,"weightV2NoEM/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V2NoEM))))
+            self.evtdatavars.append(TreeVar(self.tree,"genPtHat/F",UnaryFunc('get("geninfo").qScale()')))
            
+        max_pthats = 400
+        self.nr_pthats = TreeVar(self.tree,"nrPtHats/i",UnaryFunc(partial(len)))
+        self.pthats = TreeVar(self.tree,"ptHats/F",None,maxsize=max_pthats,sizevar="nrPtHats")
+            
         egobjnr_name = "nrEgs"
         max_egs = 100    
         self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",UnaryFunc(partial(len)))
@@ -144,6 +149,14 @@ class EgHLTTree:
             var_.fill(self.evtdata.event.object())
         for var_ in self.evtdatavars:
             var_.fill(self.evtdata)
+
+        pusum_intime = [x for x in self.evtdata.get("pu_sum") if x.getBunchCrossing()==0]
+        pt_hats = [x for x in pusum_intime[0].getPU_pT_hats()]
+        pt_hats.append(self.evtdata.get("geninfo").qScale())
+        pt_hats.sort(reverse=True)
+        self.nr_pthats.fill(pt_hats)
+        for pt_hat_nr,pt_hat in enumerate(pt_hats):
+            self.pthats.fill(pt_hat,pt_hat_nr)
             
         egobjs_raw = self.evtdata.get("egtrigobjs")
         egobjs = [eg for eg in egobjs_raw if eg.et()>self.min_et]

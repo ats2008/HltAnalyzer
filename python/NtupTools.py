@@ -46,8 +46,9 @@ class TreeVar:
         tree.Branch(self.varname,self.data,make_leaf_name(self.varname,self.vartype,self.sizevar))
         
     def fill(self,obj,objnr=0):
-        self.data[objnr] = self.func(obj)
-        
+        val = self.func(obj) if self.func else obj
+        self.data[objnr] = val 
+
     def clear(self):
         for n,x in enumerate(self.data):
             self.data[n] = 0
