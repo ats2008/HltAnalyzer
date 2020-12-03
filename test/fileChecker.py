@@ -177,7 +177,7 @@ def get_pthat_range(name):
     else:
         #min bias
         sample_min_pt_hat = 0.
-        sample_min_pt_hat = 9999.
+        sample_max_pt_hat = 9999.
     return sample_min_pt_hat,sample_max_pt_hat
 
 def qcd_weights_v2(sample_name,sample_data,output_data):
