@@ -114,7 +114,67 @@ You can see examples of this in the EgHLTTree class defination where it fills th
 It might be useful to update the e/gamma objects before filling. This might be adding new variables to them, fixing existing variables, etc. This can be done by passing a function which takes an EgTrigSumObj as its only argument. As before functions which require additional arguments can be added using UnaryFunc taking a functools.partial object
 
 
+## QCD Reweighting
 
+### Introduction
+
+This package also includes tools for QCD reweighting which is a port of Christian Veelken's [mcStiching](https://github.com/veelken/mcStitching). 
+
+The key point to understand that there is no difference between a "QCD" event and a "pileup" or "MinBias" event, its the same pythia process. Typically we define the hard interaction as the highest pt interaction in the event but in the case of QCD/MB, the generated event may actually be lower pt hat than one of the pileup events added in. Thus naively reweighting according to the pt hat of the generated QCD event will not work as what we think is a pthat = 30 GeV event is really a pthat=40 GeV event. 
+
+Therefore we reweight considering all pt hats in the event, the generated pt hat and the pu events pt hats. This method is done counting the entries in each pt hat bin of an event, comparing to that expected and reweighting accordingly. 
+
+There is an additional complication for enriched entries. In this case, we do not consider pileup as generated event is the one enriched. We first calculate the weight appropriate for the generated events pt hat and the pt hat of the PU events as normal. Then we apply an additional weight to correct for the fact we have enriched samples. Specifically the weight is the number of total events in that category / the number events expected in that category not including the enriched samples. The categories are passing EM-only, passing MU-only or passingMU+EM. 
+
+Note none of this applies to W+jets or DY samples which should be weighted as normal as they are a different generator process to the pileup.
+
+###Usage
+
+There are two classes to use, a python based on and a c++ one. The python is EvtData.QCDWeightCalc and there is a c++ implimenation QCDWeightCalc
+
+Both load the necessary information by a common json format
+
+#### Input Json
+
+The code currently expects a json with a field "v2" which then contains a field "qcd" which defines the parameters for each bin. 
+
+The parameters are
+  * min_pt : minimum pt of the bin
+  * max_pt : maximum pt of the bin
+  * xsec : cross-section (in pb) of the sample
+  * nr_em : number of events in the emenriched sample for this bin, set to zero if not running of emenriched
+  * nr_mu : number of events in the muon enriched sample for this bin, set to zero if not running over muon enriched
+  * nr_inclusive: number of events in the inclusive sample, set to zero if not running over an inclusive sample in this bin
+  * em_filt_eff : the efficiency of the em enriching filter
+  * em_mu_filter_eff : the fraction of em enriched events that are also muon enriched
+  * mu_filt_eff : the efficiency of the muon enriching filter
+  * mu_em_filter_eff : the fraction of muon enriched events that are also em enriched
+
+Note, the minbias bin should be also included here. It should have a range of min_pt of 0 and max_pt of 9999. It is the only bin which is allowed to overlap with other bins, all the other pt bins must be exclusive to each other. In the future we may end up seperating out the minbias bin to its own category due to this bin being special. 
+
+A script to generate this json is fileChecker.py but it needs to be made more general
+
+#### c++ instructions
+
+The QCDWeightCalc takes a parameter which is the filename of the input json containing the parameters for the weights and optionally the bunch frequency. 
+
+QCDWeightCalc::weight() returns the QCD appropriate  weight. It takes the genPtHat of the event, the pu hats of the pileup events and two bools indicating whether it passed em enriching and passed mu enriching. 
+
+The genPtHat can be got from GenEventInfoProduct which usually has the name "generator" via GenEventInfoProduct::qScale. 
+
+The pu pt hats can be objected from std::vector<PileupSummaryInfo> named addPileupInfo (in the miniAOD slimmedAddPileupInfo or similar). You need to find the entry with getBunchCrossing()==0. Then the pt hats are simply genPU_put_hats()
+
+Finally the weight just resulting from the enriching filter can be obtained from QCDWeightCalc::filtWeight()
+
+#### python instructions
+
+Simply pass the EvtData object into the EvtData.QCDWeightCalc.weight method. Currently this does not support muon enriching. 
+
+#### example
+
+
+
+  
 
 
 
