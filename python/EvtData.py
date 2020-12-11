@@ -120,7 +120,7 @@ class EvtWeights:
 
 class PtBinnedSample:
 
-    def __init__(self,min_pt,max_pt,xsec,nr_inclusive,nr_em,em_filt_eff):
+    def __init__(self,min_pt,max_pt,xsec,nr_inclusive,nr_em,em_filt_eff,nr_mu,mu_filt_eff,em_mu_filt_eff,mu_em_filt_eff):
         self.min_pt = min_pt
         self.max_pt = max_pt
         self.xsec = xsec
@@ -139,9 +139,8 @@ class QCDWeightCalc:
     translation of Christian Veelken's mcStiching
     https://github.com/veelken/mcStitching
     """
-    def __init__(self,ptbinned_samples,bx_freq=30000000.0,nr_expt_pu=200):
+    def __init__(self,ptbinned_samples,bx_freq=30000000.0):
         self.bx_freq = bx_freq
-        #self.nr_expt_pu = nr_expt_pu
         self.bins = [PtBinnedSample(**x) for x in ptbinned_samples]
         self.bins.sort(key=lambda x: x.min_pt)
         self.bin_lowedges = [x.min_pt for x in self.bins]
@@ -222,13 +221,12 @@ class EvtWeightsV2:
                 self.data = json.load(f)
         elif input_dict:
             self.data = dict(input_dict)
-        else:
-            self.data = {}
+        else:            self.data = {}
             
         self.warned = []
         self.lumi = bx_freq * nr_expt_pu / mb_xsec
         if self.data:
-            self.qcd_weights = QCDWeightCalc(self.data['v2']['qcd'],bx_freq,nr_expt_pu)
+            self.qcd_weights = QCDWeightCalc(self.data['v2']['qcd'],bx_freq)
             self.weights_v1 = EvtWeights(input_dict=self.data['v1'])
     
     def weight_from_name(self,dataset_name,evtdata,weight_type=WeightType.V2):        
