@@ -100,5 +100,9 @@ if __name__ == "__main__":
         hadd_cmd.extend(job_outfiles)
         subprocess.Popen(hadd_cmd).communicate()
         #safer not to clean up the temporary files incase of hadd problem
+        #but will do it here for convence reasons
+        for job_outfile in job_outfiles:
+            if os.path.exists(job_outfile):
+                os.remove(job_outfile)
         print("hadd finished")
           

@@ -8,6 +8,7 @@ import json
 import re
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
 import numpy
+from enum import Enum
 
 class HandleData(Handle):
     def __init__(self,product,label):
@@ -119,7 +120,7 @@ class EvtWeights:
 
 class PtBinnedSample:
 
-    def __init__(self,min_pt,max_pt,xsec,nr_inclusive,nr_em,em_filt_eff):
+    def __init__(self,min_pt,max_pt,xsec,nr_inclusive,nr_em,em_filt_eff,nr_mu,mu_filt_eff,em_mu_filt_eff,mu_em_filt_eff):
         self.min_pt = min_pt
         self.max_pt = max_pt
         self.xsec = xsec
@@ -132,15 +133,14 @@ class PtBinnedSample:
         self.mu_filt_eff = 0.
         print("{}-{} {} {}".format(min_pt,max_pt,xsec,nr_inclusive)) 
 
+
 class QCDWeightCalc:
     """ 
     translation of Christian Veelken's mcStiching
     https://github.com/veelken/mcStitching
     """
-    def __init__(self,ptbinned_samples,bx_freq=30000000.0,nr_expt_pu=200,use_em_filt=True):
+    def __init__(self,ptbinned_samples,bx_freq=30000000.0):
         self.bx_freq = bx_freq
-        self.use_em_filt = use_em_filt
-        #self.nr_expt_pu = nr_expt_pu
         self.bins = [PtBinnedSample(**x) for x in ptbinned_samples]
         self.bins.sort(key=lambda x: x.min_pt)
         self.bin_lowedges = [x.min_pt for x in self.bins]
@@ -157,7 +157,7 @@ class QCDWeightCalc:
             bin_.nr_em_expect = nr_em_mb + nr_em_qcd_inc
             bin_.nr_em_actual = nr_em_mb + nr_em_qcd_inc + bin_.nr_em
 
-    def weight(self,evtdata):
+    def weight(self,evtdata,use_em_filt=True):
         pusum_intime = [x for x in evtdata.get("pu_sum") if x.getBunchCrossing()==0]
         bin_counts = [0]*(len(self.bins)+1)
         tot_count= pusum_intime[0].getPU_pT_hats().size()
@@ -188,7 +188,7 @@ class QCDWeightCalc:
             expect_events_mc += sample_bin.nr_inclusive * prob_corr
             
         weight = float(self.bx_freq) / float(expect_events_mc)
-        if self.use_em_filt:
+        if use_em_filt:
             weight *= self.em_weight(evtdata)
         return weight
 
@@ -209,32 +209,37 @@ class QCDWeightCalc:
 
 
 class EvtWeightsV2:
-    def __init__(self,input_filename=None,input_dict=None,use_em_filt=True,bx_freq=30.0E6,nr_expt_pu=200,mb_xsec = 80.0E9):
+    
+    class WeightType(Enum):
+        V1 = 1
+        V2 = 2
+        V2NoEM = 3
+
+    def __init__(self,input_filename=None,input_dict=None,bx_freq=30.0E6,nr_expt_pu=200,mb_xsec = 80.0E9):
         if input_filename: 
             with open(input_filename,'r') as f:
                 self.data = json.load(f)
         elif input_dict:
             self.data = dict(input_dict)
-        else:
-            self.data = {}
+        else:            self.data = {}
             
         self.warned = []
-        self.use_emfilt = use_em_filt
         self.lumi = bx_freq * nr_expt_pu / mb_xsec
         if self.data:
-            self.qcd_weights = QCDWeightCalc(self.data['v2']['qcd'],bx_freq,nr_expt_pu,use_em_filt=use_em_filt)
+            self.qcd_weights = QCDWeightCalc(self.data['v2']['qcd'],bx_freq)
             self.weights_v1 = EvtWeights(input_dict=self.data['v1'])
     
-    def weight_from_name(self,dataset_name,evtdata):        
-        if dataset_name.startswith("QCD") or dataset_name.startswith("MinBias")!=-1:
-            return self.qcd_weights.weight(evtdata)
+    def weight_from_name(self,dataset_name,evtdata,weight_type=WeightType.V2):        
+        if not weight_type==EvtWeightsV2.WeightType.V1 and (dataset_name.startswith("QCD") or dataset_name.startswith("MinBias")):
+            use_em_filt = weight_type==EvtWeightsV2.WeightType.V2
+            return self.qcd_weights.weight(evtdata,use_em_filt=use_em_filt)
         else:          
             return self.weights_v1.weight_from_name(dataset_name,evtdata)
 
-    def weight_from_evt(self,evtdata):
+    def weight_from_evt(self,evtdata,weight_type=WeightType.V2):
         filename = evtdata.event.object().getTFile().GetName().split("/")[-1]
         dataset_name = re.search(r'(.+)(_\d+_EDM.root)',filename).groups()[0]
-        return self.weight_from_name(dataset_name,evtdata)
+        return self.weight_from_name(dataset_name,evtdata,weight_type)
 
 def get_objs(evtdata,events,objname,indx):
     """

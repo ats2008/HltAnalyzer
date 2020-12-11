@@ -4,7 +4,7 @@ from DataFormats.FWLite import Events, Handle
 import ROOT
 from functools import partial
 
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles, EvtWeights, phaseII_products
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles, EvtWeightsV2, phaseII_products
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
@@ -42,7 +42,7 @@ def main():
     args = parser.parse_args()
     
     evtdata = EvtData(phaseII_products,verbose=True)
-    weights = EvtWeights(args.weights,corr_for_pu=True) if args.weights else None
+    weights = EvtWeightsV2(args.weights) if args.weights else None
 
     out_file = ROOT.TFile(args.out_filename,"RECREATE")
 
@@ -76,10 +76,10 @@ def main():
 
     })
     eghlt_tree.add_eg_update_funcs([
-        CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
+      #  CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
     ])
 
-    events = Events(args.in_filenames)
+    events = Events(CoreTools.get_filenames(args.in_filenames))
     nr_events = events.size()
     for event_nr,event in enumerate(events):
         if event_nr%args.report==0:
