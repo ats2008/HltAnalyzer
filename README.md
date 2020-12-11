@@ -172,7 +172,7 @@ Simply pass the EvtData object into the EvtData.QCDWeightCalc.weight method. Cur
 
 #### example
 
-
+An example is checkPUPtHat.py
 
   
 
