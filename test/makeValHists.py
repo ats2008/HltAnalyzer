@@ -37,11 +37,11 @@ def make_val_hists(in_filenames,out_name):
     hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="GenMatchTrk",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
 
     desc = "Non Gen Matched Electrons"
-    hists_genmatch = HistTools.create_histcoll(tag="NoGenMatch",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
+    hists_nogenmatch = HistTools.create_histcoll(tag="NoGenMatch",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
     desc = "Non Gen Matched Electrons with Pixel Match"
-    hists_genmatch_seed = HistTools.create_histcoll(tag="NoGenMatchSeed",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
+    hists_nogenmatch_seed = HistTools.create_histcoll(tag="NoGenMatchSeed",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
     desc = "Non Gen Matched Electrons with GsfTrack"
-    hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="NoGenMatchTrk",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
+    hists_nogenmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="NoGenMatchTrk",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
 
     
     for event_nr,event in enumerate(events):
@@ -65,11 +65,11 @@ def make_val_hists(in_filenames,out_name):
                     hists_genmatch_trk.fill(egobj,weight)
             else:
                 egobj.et_gen = -999
-                hists_genmatch.fill(egobj,weight)
+                hists_nogenmatch.fill(egobj,weight)
                 if not egobj.seeds().empty():
-                    hists_genmatch_seed.fill(egobj,weight)
+                    hists_nogenmatch_seed.fill(egobj,weight)
                 if not egobj.gsfTracks().empty():                    
-                    hists_genmatch_trk.fill(egobj,weight)
+                    hists_nogenmatch_trk.fill(egobj,weight)
 
     
     out_file.cd()
