@@ -126,13 +126,47 @@ class PtBinnedSample:
         self.xsec = xsec
         self.nr_inclusive = nr_inclusive
         self.nr_em = nr_em
-        self.nr_em_expect = 0
-        self.nr_em_actual = 0
         self.em_filt_eff = em_filt_eff
-        self.nr_mu = 0.
-        self.mu_filt_eff = 0.
+        self.em_mu_filt_eff = em_mu_filt_eff
+        self.nr_mu = nr_mu
+        self.mu_filt_eff = mu_filt_eff
+        self.mu_em_filt_eff = mu_em_filt_eff
+        
+        self.nr_emnomu_expect = 0.
+        self.nr_emnomu_actual = 0.
+        self.nr_munoem_expect = 0.
+        self.nr_munoem_actual = 0.
+        self.nr_emmu_expect = 0.
+        self.nr_emmu_actual = 0.
+        
         print("{}-{} {} {}".format(min_pt,max_pt,xsec,nr_inclusive)) 
 
+    def _get_incl_expect(self,nr_mb_tot,mb_xsec,filt_eff):
+        """
+        gets the number of events (inclusive + mb) expected
+        for a given filter efficiency
+        """
+        nr_mb = nr_mb_tot*filt_eff*self.xsec/mb_xsec
+        nr_incl = self.nr_inclusive*filt_eff
+        return nr_mb+nr_incl
+
+    def set_enriched_counts(self,nr_minbias,minbias_xsec):
+        
+        self.nr_emnomu_expect = self._get_incl_expect(nr_minbias,minbias_xsec,
+                                                      self.em_filt_eff*(1-self.em_mu_filt_eff))
+        self.nr_munoem_expect = self._get_incl_expect(nr_minbias,minbias_xsec,
+                                                      self.mu_filt_eff*(1-self.mu_em_filt_eff))
+        self.nr_emmu_expect = self._get_incl_expect(nr_minbias,minbias_xsec,
+                                                    self.em_filt_eff*self.em_mu_filt_eff)
+        
+        self.nr_emnomu_actual = (self.nr_emnomu_expect + 
+                                 self.nr_em*(1-self.em_mu_filt_eff))
+         
+        self.nr_munoem_actual = (self.nr_munoem_expect + 
+                                 self.nr_mu*(1-self.mu_em_filt_eff))
+        self.nr_emmu_actual = (self.nr_emmu_expect + 
+                               self.nr_em*self.em_mu_filt_eff + 
+                               self.nr_mu*self.mu_em_filt_eff)
 
 class QCDWeightCalc:
     """ 
@@ -152,12 +186,9 @@ class QCDWeightCalc:
         #now we get the number of EM events (skip bin 0 which is  minbias)
         min_bias = self.bins[0]
         for bin_ in self.bins[1:]:
-            nr_em_mb = min_bias.nr_inclusive*bin_.xsec/min_bias.xsec * bin_.em_filt_eff
-            nr_em_qcd_inc  = bin_.nr_inclusive*bin_.em_filt_eff
-            bin_.nr_em_expect = nr_em_mb + nr_em_qcd_inc
-            bin_.nr_em_actual = nr_em_mb + nr_em_qcd_inc + bin_.nr_em
+            bin_.set_enriched_counts(min_bias.nr_inclusive,min_bias.xsec)
 
-    def weight(self,evtdata,use_em_filt=True):
+    def weight(self,evtdata,disable_enriched=False):
         pusum_intime = [x for x in evtdata.get("pu_sum") if x.getBunchCrossing()==0]
         bin_counts = [0]*(len(self.bins)+1)
         tot_count= pusum_intime[0].getPU_pT_hats().size()
@@ -188,25 +219,30 @@ class QCDWeightCalc:
             expect_events_mc += sample_bin.nr_inclusive * prob_corr
             
         weight = float(self.bx_freq) / float(expect_events_mc)
-        if use_em_filt:
-            weight *= self.em_weight(evtdata)
+        if not disable_enriched:
+            weight *= self.enriched_weight(evtdata)
         return weight
 
-    def em_weight(self,evtdata):
-        geninfo = evtdata.get("geninfo")
+    def enriched_weight(self,evtdata):
         self.gen_filters.fill(evtdata)
-        is_em = self.gen_filters.result("Gen_QCDEmEnrichingFilter") and not self.gen_filters.result("Gen_QCDBCToEFilter")
-        weight = 1.
-        if is_em:
-            #should never be -1 as we should never hit the underflow and if 
-            #so there is a problem
+        pass_em = self.gen_filters.result("Gen_QCDEmEnrichingNoBCToEFilter")
+        pass_mu = self.gen_filters.result("Gen_QCDMuGenFilter")
+        if  pass_em and pass_mu:
+            geninfo = evtdata.get("geninfo")
+            #should never be -1 as we should never hit the underflow 
+            #and if so there is a problem
             sample_nr = numpy.digitize(geninfo.qScale(),self.bin_lowedges)-1
             sample_nr = sample_nr if sample_nr < len(self.bins) else 0
-            bin_ = self.bins[sample_nr] 
-            if bin_.nr_em_actual!=0:
-                weight = float(bin_.nr_em_expect)/float(bin_.nr_em_actual)
-        return weight
-
+            bin_ = self.bins[sample_nr]    
+            div_with_check = lambda a,b :  a/b if b!=0 else 1.
+            if pass_em and pass_mu:
+                return div_with_check(bin_.nr_emmu_expect,bin_.nr_emmu_actual)
+            elif pass_em and not pass_mu:
+                return div_with_check(bin_.nr_emnomu_expect,bin_.nr_emnomu_actual)
+            elif not pass_em and pass_mu:
+                return div_with_check(bin_.nr_munoem_expect,bin_.nr_munoem_actual)
+        else:
+            return 1.
 
 class EvtWeightsV2:
     
