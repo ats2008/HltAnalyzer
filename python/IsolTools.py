@@ -41,7 +41,7 @@ def get_hlt_iso(egobj,evtdata,trkcoll="trksv6",min_pt=1.,max_dz=0.15,min_deta=0.
 def get_l1_iso(egobj,evtdata,min_pt=2.,max_dz=0.7,min_deta=0.003,max_dr2=0.3*0.3,min_dr2=0.01*0.01):
 
     if egobj.gsfTracks().empty():
-        return 99. # if no gsf track, then that SC do not pass track isolation  
+        return 99999. # if no gsf track, then that SC do not pass track isolation  
 
     indx_bestgsf = GsfTools.get_indx_best_gsf(egobj)
 

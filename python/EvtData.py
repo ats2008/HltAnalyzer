@@ -256,7 +256,8 @@ def add_product(prods,name,type_,tag):
     prods.append({'name' : name, 'type' : type_, 'tag' : tag})
 
 std_products=[]
-add_product(std_products,"egtrigobjs","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtraL1Seeded")
+add_product(std_products,"egtrigobjs","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtra")
+add_product(std_products,"egtrigobjs","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtraUnseeded")
 add_product(std_products,"genparts","std::vector<reco::GenParticle>","genParticles")
 
 phaseII_products = []

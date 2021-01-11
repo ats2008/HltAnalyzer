@@ -80,7 +80,8 @@ class EgHLTTree:
             'sigma2zz/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2zz',0)),
             'pms2_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaPixelMatchVarsUnseeded_s2',0)),
             'hgcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_hForHOverE',0)),
-            'hcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHoverEUnseeded',0)),
+            'hcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHoverEUnseeded',0)), 
+            'l1TrkIsoCMSSW/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaEleL1TrkIsoUnseeded',0)),
         }
         vars_.update(self.eg_extra_vars)
 
