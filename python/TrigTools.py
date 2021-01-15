@@ -61,32 +61,30 @@ class MenuPathRates:
             self.weights = 0.
             self.weights_sq = 0.
         
-    def __init__(self,input_weights):
+    def __init__(self,trig_res_name="trig_res"):
         self.trigs = []
-        with open(args.weights) as f:
-            weights = json.load(f)
-        self.weight_calc = EvtData.EvtWeightsV2(input_dict=weights)
-
-    def set_trigs(evtdata):
+        self.trig_res_name = "trig_res_hlt"
+    def set_trigs(self,evtdata):
+        trig_res = evtdata.get(self.trig_res_name)
         trig_names = evtdata.event.object().triggerNames(trig_res)
-        for indx,name in enumerate(trig_names):
-            self.trigs.append(TrigData(indx,name))
+        for indx,name in enumerate(trig_names.triggerNames()):
+            self.trigs.append(MenuPathRates.TrigData(indx,name))
             
-    def fill(self,evtdata):
+    def fill(self,evtdata,weight):
+        weight_sq = weight*weight
         if not self.trigs:
-            set_trigs(evtdata)
-        weight =weight_calc.weight_from_evt(evtdata)
-        trig_res = evtdata.get("trig_res")
+            self.set_trigs(evtdata)
+        trig_res = evtdata.get(self.trig_res_name)
         for trig in self.trigs:
             if trig_res[trig.indx].accept():
                 trig.counts += 1
                 trig.weights += weight
                 trig.weights_sq += weight_sq
             
-    def get_results():
+    def get_results(self):
         results = {}
         for trig in self.trigs:
-            results[name] = {"rate" : trig.weights,
+            results[trig.name] = {"rate" : trig.weights,
                              "rate_err" : math.sqrt(trig.weights_sq),
                              "raw_counts" : trig.counts}
         return results
