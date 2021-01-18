@@ -160,10 +160,8 @@ class EvtWeights:
         mcsample = self.mcsample_getter.get(evtdata)        
         if mcsample.proc_type == MCSample.ProcType.QCD or mcsample.proc_type == MCSample.ProcType.MB:
             disable_enriched = weight_type==EvtWeights.WeightType.V2NoEnrich
-            print("qcd weight")
             return self.qcd_weights.weight(evtdata,disable_enriched=disable_enriched)
         else:         
-            print("non qcd weight")
             key = ""
             if mcsample.proc_type == MCSample.ProcType.DY: key = "dy"
             if mcsample.proc_type == MCSample.ProcType.WJets: key = "wjets"
@@ -172,3 +170,9 @@ class EvtWeights:
             except KeyError:
                 return 1.
 
+    def filtweight(self,evtdata): 
+        mcsample = self.mcsample_getter.get(evtdata)  
+        if mcsample.proc_type == MCSample.ProcType.QCD or mcsample.proc_type == MCSample.ProcType.MB:
+            return self.qcd_weights.enriched_weight(evtdata)
+        else:
+            return 1.
