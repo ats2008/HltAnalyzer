@@ -133,25 +133,26 @@ class MCSampleGetter:
     def __init__(self):
         self.last_type = MCSample()
         self.last_file = None
-        self.root_func_init = False
         self.getval_re = re.compile(r'[= ]([0-9.]+)')
 
-    def get(self,evtdata):
+    def get(self,evtdata=None):
         """
         this is keyed to the TSG samples which are all pythia except WJets
         it also assumes a given file will only contain a given process
         """
+        if not evtdata:
+            return self.last_type
 
-        if self.last_file==evtdata.event.object().getTFile().GetName():
-            return last_type
-        
-        self.last_file==evtdata.event.object().getTFile().GetName()
+        if self.last_file==evtdata.event.object().getTFile().GetName():            
+            return self.last_type
+
+        self.last_file=evtdata.event.object().getTFile().GetName()
         
         sig_id = evtdata.get("geninfo").signalProcessID()
         if sig_id >=101 and sig_id<=106:
             self.last_type = MCSample(MCSample.ProcType.MB)
         elif sig_id>=111 and sig_id<=124:
-            if not self.root_func_init:
+            if not hasattr(ROOT,"qcdMCFiltType"):
                 ROOT.gInterpreter.Declare("""
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 int qcdMCFiltType(edm::ParameterSet& pset,const int inclCode,const int emCode,const int muCode){
@@ -168,7 +169,7 @@ std::vector<std::string> getGenProcParam(edm::ParameterSet& pset){
    return pythPSet.getParameter<std::vector<std::string> >("processParameters");
 }
                 """)
-                self.root_func_init = True
+                
             cfg = ROOT.edm.ProcessConfiguration()  
             proc_hist = evtdata.event.object().processHistory() 
             proc_hist.getConfigurationForProcess("SIM",cfg) 
