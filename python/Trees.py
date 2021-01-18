@@ -5,10 +5,11 @@ import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.L1Tools as L1Tools
 from Analysis.HLTAnalyserPy.CoreTools import UnaryFunc
 from Analysis.HLTAnalyserPy.NtupTools import TreeVar
-from Analysis.HLTAnalyserPy.EvtData import EvtWeightsV2
+from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 
 from functools import partial
 import itertools
+from array import array
 
 class EgHLTTree:
     def __init__(self,tree_name,evtdata,min_et=0.,weights=None):
@@ -35,11 +36,17 @@ class EgHLTTree:
         ]
         self.evtdatavars = []
         if self.weights:
-            self.evtdatavars.append(TreeVar(self.tree,"weightV1/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V1))))
-            self.evtdatavars.append(TreeVar(self.tree,"weightV2/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V2))))
-            self.evtdatavars.append(TreeVar(self.tree,"weightV2NoEM/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeightsV2.WeightType.V2NoEM))))
-            self.evtdatavars.append(TreeVar(self.tree,"genPtHat/F",UnaryFunc('get("geninfo").qScale()')))
-           
+            self.evtdatavars.append(TreeVar(self.tree,"weightV2/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeights.WeightType.V2))))
+            self.evtdatavars.append(TreeVar(self.tree,"weightV2NoEnrich/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeights.WeightType.V2NoEnrich))))
+            
+        self.evtdatavars.append(TreeVar(self.tree,"genPtHat/F",UnaryFunc('get("geninfo").qScale()')))
+        self.evtdatavars.append(TreeVar(self.tree,"nrHitsEB1GeV/F",UnaryFunc('get_fundtype("nrHitsEB1GeV")')))
+        self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalEE1GeV/F",UnaryFunc('get_fundtype("nrHGCalEE1GeV")')))
+        self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalHEB1GeV/F",UnaryFunc('get_fundtype("nrHGCalHEB1GeV")')))
+        self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalHEF1GeV/F",UnaryFunc('get_fundtype("nrHGCalHEF1GeV")')))
+        self.evtdatavars.append(TreeVar(self.tree,"rho/F",UnaryFunc('get_fundtype("rho")')))
+            
+            
         max_pthats = 400
         self.nr_pthats = TreeVar(self.tree,"nrPtHats/i",UnaryFunc(partial(len)))
         self.pthats = TreeVar(self.tree,"ptHats/F",None,maxsize=max_pthats,sizevar="nrPtHats")
@@ -51,8 +58,13 @@ class EgHLTTree:
         vars_ = {
             'et/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.et)),
             'energy/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.energy)),
+            'rawEnergy/F' : UnaryFunc("superCluster().rawEnergy()"),
             'eta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.eta)),
             'phi/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.phi)),
+            'phiWidth/F':UnaryFunc("superCluster().phiWidth()"),
+            'nrClus/I':UnaryFunc("superCluster().clusters().size()"),
+            'seedId/i':UnaryFunc("superCluster().seed().seed().rawId()"),
+            'seedDet/I':UnaryFunc("superCluster().seed().seed().det()"),
             'sigmaIEtaIEta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)),
             'ecalPFIsol_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEcalPFClusterIsoUnseeded",0)),
             'hcalPFIsol_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaHcalPFClusterIsoUnseeded",0)),
@@ -82,6 +94,7 @@ class EgHLTTree:
             'hgcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_hForHOverE',0)),
             'hcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHoverEUnseeded',0)), 
             'l1TrkIsoCMSSW/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaEleL1TrkIsoUnseeded',0)),
+           
         }
         vars_.update(self.eg_extra_vars)
 
@@ -206,4 +219,78 @@ class EgHLTTree:
         for var_ in self.trig_vars:
             var_.fill(self.trig_res)
 
+        self.tree.Fill()
+
+
+class HLTRateTree:
+    def __init__(self,tree_name,weights_file,trig_res_name):
+        self.tree = ROOT.TTree(tree_name,"")
+        self.initialised = False
+        self.gen_filters = TrigTools.TrigResults(["Gen_QCDMuGenFilter",
+                                                  "Gen_QCDEmEnrichingNoBCToEFilter"])
+        self.trig_res_name = trig_res_name
+        self.weight_calc = EvtWeights(weights_file)
+
+    def init_tree(self,trig_names):
+        if self.initialised:
+            return 
+
+        self.hard_pt_hat = array("f",[0])
+        self.nr_pt_hats = array("i",[0])
+        self.pt_hats = ROOT.std.vector("float")()
+        self.weight = array("f",[0])
+        self.filtweight = array("f",[0])
+        self.pass_em = array("i",[0])
+        self.pass_mu = array("i",[0])
+        self.mc_type = array("i",[0])
+        self.filt_type = array("i",[0])
+        
+        self.tree.Branch("hardPtHat",self.hard_pt_hat,"hardPtHat/F")
+        self.tree.Branch("nrPtHats",self.nr_pt_hats,"nrPtHats/I")
+        self.tree.Branch("ptHats",self.pt_hats)
+        self.tree.Branch("weight",self.weight,"weight/F")
+        self.tree.Branch("filtWeight",self.filtweight,"filtWeight/F")
+        self.tree.Branch("passEM",self.pass_em,"passEM/I")
+        self.tree.Branch("passMU",self.pass_mu,"passMU/I")
+        self.tree.Branch("mcType",self.mc_type,"mcType/I")
+        self.tree.Branch("FiltType",self.filt_type,"filtType/I")
+
+       
+        self.trig_res = [array("B",[0]) for x in range(0,trig_names.size())]
+        for trig_nr,trig_name in enumerate(trig_names):
+            trig_name = TrigTools.sep_trig_ver(trig_name)[0]
+            self.tree.Branch(trig_name,self.trig_res[trig_nr],trig_name+"/b")
+            
+        self.initialised = True
+
+    def fill(self,evtdata): 
+        trig_res = evtdata.get(self.trig_res_name) 
+        if not self.initialised: 
+            self.init_tree(evtdata.event.object().triggerNames(trig_res).triggerNames())
+       
+        geninfo = evtdata.get("geninfo")
+        pu_sum  = evtdata.get("pu_sum")
+        pu_sum_intime = [x for x in evtdata.get("pu_sum") if x.getBunchCrossing()==0]
+        pt_hats = [x for x in pu_sum_intime[0].getPU_pT_hats()]
+        pt_hats.append(geninfo.qScale())
+        pt_hats.sort(reverse=True)
+        
+        self.gen_filters.fill(evtdata)
+
+        self.hard_pt_hat[0] = geninfo.qScale()
+        self.pt_hats.clear()
+        for pt_hat in pt_hats:
+            self.pt_hats.push_back(pt_hat)
+        self.nr_pt_hats[0] = self.pt_hats.size()
+        self.weight[0] = self.weight_calc.weight(evtdata)
+        self.filtweight[0] = self.weight_calc.filtweight(evtdata)
+        self.pass_em[0] = self.gen_filters.result("Gen_QCDEmEnrichingNoBCToEFilter")
+        self.pass_mu[0] = self.gen_filters.result("Gen_QCDMuGenFilter")
+        self.mc_type[0] = self.weight_calc.mcsample_getter.get().proc_type
+        self.filt_type[0] = self.weight_calc.mcsample_getter.get().filt_type
+           
+        #for whatever reason an enumerate was not working
+        for trig_nr in range(0,trig_res.size()):
+            self.trig_res[trig_nr][0] = trig_res[trig_nr].accept()
+        
         self.tree.Fill()
