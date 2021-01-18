@@ -62,6 +62,16 @@ class EvtData:
         except RuntimeError:
             return None
            
+    def get_fundtype(self,name):
+         """
+         hack as I needed this working right now(tm) and this was path of least resistance
+         """
+         handle = self.get_handle(name)
+         
+         try:
+             return handle.product()[0]       
+         except RuntimeError:
+             return None
 
 def get_objs(evtdata,events,objname,indx):
     """
@@ -71,7 +81,13 @@ def get_objs(evtdata,events,objname,indx):
     evtdata.get_handles(events)
     objs = evtdata.get(objname)
     print("event: {} {} {}".format(events.eventAuxiliary().run(),events.eventAuxiliary().luminosityBlock(),events.eventAuxiliary().event()))
-    print("# {} = {}".format(objname,objs.size()))
+    try:
+        print("# {} = {}".format(objname,objs.size()))
+    except AttributeError:
+        if objs!=None:
+            print("{} got".format(objname))
+        else:
+            print("{} not found".format(objname))
     return objs
 
 def add_product(prods,name,type_,tag):
@@ -90,6 +106,7 @@ add_product(phaseII_products,"genparts","std::vector<reco::GenParticle>","genPar
 add_product(phaseII_products,"l1trks","std::vector<TTTrackExtra<edm::Ref<edm::DetSetVector<Phase2TrackerDigi>,Phase2TrackerDigi,edm::refhelper::FindForDetSetVector<Phase2TrackerDigi> > > >","hltEgammaHLTPhase2Extra")
 add_product(phaseII_products,"trkpart","std::vector<TrackingParticle>","hltEgammaHLTPhase2Extra")
 add_product(phaseII_products,"hcalhits","edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> >","hltEgammaHLTExtra")
+add_product(phaseII_products,"ebhits","edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> >","hltEgammaHLTExtra:EcalRecHitsEB")
 add_product(phaseII_products,"trksv0","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV0")
 add_product(phaseII_products,"trksv2","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV2")
 add_product(phaseII_products,"trksv6","std::vector<reco::Track>","hltEgammaHLTExtra:generalTracksV6")
@@ -108,3 +125,8 @@ add_product(phaseII_products,"l1egs_hgcal","BXVector<l1t::EGamma>","l1EGammaEEPr
 add_product(phaseII_products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
 add_product(phaseII_products,"hghadpfclus","std::vector<reco::PFCluster>","hltEgammaHLTExtra:HgcalHAD")
 add_product(phaseII_products,"geninfo","GenEventInfoProduct","generator")
+add_product(phaseII_products,"nrHitsEB1GeV","int","hltEgammaHLTExtra:countEcalRecHitsEcalRecHitsEBThres1GeV")
+add_product(phaseII_products,"nrHGCalEE1GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCEERecHitsThres1GeV")
+add_product(phaseII_products,"nrHGCalHEB1GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCHEBRecHitsThres1GeV")
+add_product(phaseII_products,"nrHGCalHEF1GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCHEFRecHitsThres1GeV")
+add_product(phaseII_products,"rho","double","hltFixedGridRhoFastjetAllCaloForMuons")
