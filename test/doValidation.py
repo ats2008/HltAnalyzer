@@ -177,7 +177,7 @@ def gen_html(canvases_to_draw,html_body=None):
  
 <title>E/gamma Validation</title>
  
-<script src="https://root.cern/js/latest/scripts/JSRootCore.js" type="text/javascript"></script>
+<script src="https://root.cern/js/5.9.1/scripts/JSRootCore.js" type="text/javascript"></script>
  
 <script type='text/javascript'> 
   var filename = "output.root";
