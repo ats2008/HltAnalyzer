@@ -269,8 +269,8 @@ def qcd_weights_v2(output_data,nrevents,mcdata):
     elif mcdata.filt_type==MCSample.FiltType.Mu:
         output_entry['nr_mu'] += nrevents
     else:
-        output_entry['nr_inclusive'] = nrevents
-    
+        output_entry['nr_inclusive'] += nrevents
+
 def fill_weights_dict_v2(weights_dict,nrevents,mcdata):
     if mcdata.mc_type == MCSample.ProcType.QCD or mcdata.mc_type == MCSample.ProcType.MB:
         qcd_weights_v2(weights_dict['qcd'],nrevents,mcdata)
@@ -281,8 +281,7 @@ def fill_weights_dict_v2(weights_dict,nrevents,mcdata):
         
         if not weights_dict[key]:
             weights_dict[key].append({"nrtot": 0, "xsec": get_xsec(mcdata)})
-        weights_dict[key]["nrtot"]+=nrevents
-
+        weights_dict[key][0]["nrtot"]+=nrevents
         
     return weights_dict
         
@@ -292,11 +291,12 @@ if __name__ == "__main__":
     parser.add_argument('--prefix','-p',default='file:',help='file prefix')
     parser.add_argument('--out','-o',default='weights.json',help='output weights json')
     parser.add_argument('--direct','-d',action='store_true',help='read nrtot directly from tree entries')
-                             
+    parser.add_argument('--hlt_proc',default='HLTX',help='HLTX process, needed if not direct')
     args = parser.parse_args()
     
     products = []
     add_product(products,"geninfo","GenEventInfoProduct","generator")
+    
     evtdata = EvtData(products)
     
     in_filenames = CoreTools.get_filenames(args.in_filenames,args.prefix)
@@ -304,17 +304,23 @@ if __name__ == "__main__":
     weights_dict = {"v2" : { "dy" : [], "qcd": [], "wjets" : [] } }
     #we always need a MB entry so force it to be created
     fill_weights_dict_v2(weights_dict['v2'],0.,MCSample(MCSample.ProcType.MB))
-
     mc_type_getter = MCSampleGetter()
     for in_filename in in_filenames:
         events = Events(in_filename)          
         if events.size()==0: 
+            print("error, empty event",in_filename)
             continue
         events.to(0)
         evtdata.get_handles(events)
         mcinfo = mc_type_getter.get_type(evtdata)
-        fill_weights_dict_v2(weights_dict["v2"],events.size(),mcinfo)
-        
+
+        if args.direct:
+            fill_weights_dict_v2(weights_dict["v2"],events.size(),mcinfo)
+        else:
+            root_file = events.object().event().getTFile() 
+            root_file.Runs.GetEntry(0)
+            nr_events = getattr(root_file.Runs,"edmMergeableCounter_hltNrInputEvents_nrEventsRun_{proc_name}".format(proc_name=args.hlt_proc)).value 
+            fill_weights_dict_v2(weights_dict["v2"],nr_events,mcinfo)
     weights_dict['v2']['qcd'].sort(key=lambda x : x['min_pt'])
     with open(args.out,'w') as f:
         json.dump(weights_dict,f)
