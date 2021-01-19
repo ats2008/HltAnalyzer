@@ -36,9 +36,8 @@ class EgHLTTree:
         ]
         self.evtdatavars = []
         if self.weights:
-            self.evtdatavars.append(TreeVar(self.tree,"weightV2/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeights.WeightType.V2))))
-            self.evtdatavars.append(TreeVar(self.tree,"weightV2NoEnrich/F",UnaryFunc(partial(self.weights.weight_from_evt,EvtWeights.WeightType.V2NoEnrich))))
-            
+            self.evtdatavars.append(TreeVar(self.tree,"weight/F",self.weights.weight)),
+            self.evtdatavars.append(TreeVar(self.tree,"filtweight/F",self.weights.filtweight))
         self.evtdatavars.append(TreeVar(self.tree,"genPtHat/F",UnaryFunc('get("geninfo").qScale()')))
         self.evtdatavars.append(TreeVar(self.tree,"nrHitsEB1GeV/F",UnaryFunc('get_fundtype("nrHitsEB1GeV")')))
         self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalEE1GeV/F",UnaryFunc('get_fundtype("nrHGCalEE1GeV")')))
@@ -253,7 +252,7 @@ class HLTRateTree:
         self.tree.Branch("passEM",self.pass_em,"passEM/I")
         self.tree.Branch("passMU",self.pass_mu,"passMU/I")
         self.tree.Branch("mcType",self.mc_type,"mcType/I")
-        self.tree.Branch("FiltType",self.filt_type,"filtType/I")
+        self.tree.Branch("filtType",self.filt_type,"filtType/I")
 
        
         self.trig_res = [array("B",[0]) for x in range(0,trig_names.size())]
