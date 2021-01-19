@@ -36,179 +36,7 @@ def process_dir(dir_,proc_name="HLTX",read_nrtot_directly=False):
     return {"nr_pass" : nr_pass,"nr_tot" : nr_tot,
             "good_files" : good_files,"bad_files" : bad_files}
     
-def get_xsec(job_name):
-    """
-    The defination of fragile, keyed to my scripts naming convension which is datasetname__conditions__tag
-    """
-    xsecs = {
-        'QCD_Pt-15to20_EMEnriched_TuneCP5_14TeV_pythia8' : 1448000.0,
-        'QCD_Pt-20to30_EMEnriched_TuneCP5_14TeV_pythia8' : 5370000.0,
-        'QCD_Pt-30to50_EMEnriched_TuneCP5_14TeV_pythia8' : 7022000.0,
-        'QCD_Pt-50to80_EMEnriched_TuneCP5_14TeV_pythia8' : 2211000.0,
-        'QCD_Pt-80to120_EMEnriched_TuneCP5_14TeV_pythia8' : 413300.0,
-        'QCD_Pt-120to170_EMEnriched_TuneCP5_14TeV_pythia8' : 76740.0,
-        'QCD_Pt-170to300_EMEnriched_TuneCP5_14TeV_pythia8' : 19380.0,
-        'QCD_Pt-300toInf_EMEnriched_TuneCP5_14TeV_pythia8' : 1337.0,   
-        "QCD_Pt_15to20_TuneCP5_14TeV_pythia8" : 923300000.0,
-        "QCD_Pt_20to30_TuneCP5_14TeV_pythia8" : 436000000.0,
-        "QCD_Pt_30to50_TuneCP5_14TeV_pythia8" : 118400000.0,
-        "QCD_Pt_50to80_TuneCP5_14TeV_pythia8" : 17650000.0,
-        "QCD_Pt_80to120_TuneCP5_14TeV_pythia8" : 2671000.0,
-        "QCD_Pt_120to170_TuneCP5_14TeV_pythia8" : 469700.0,
-        "QCD_Pt_170to300_TuneCP5_14TeV_pythia8" : 121700.0,
-        "QCD_Pt_300to470_TuneCP5_14TeV_pythia8" : 8251.0,
-        "QCD_Pt_470to600_TuneCP5_14TeV_pythia8" : 686.4,
-        "QCD_Pt_600oInf_TuneCP5_14TeV_pythia8" : 244.8,
-        "WJetsToLNu_TuneCP5_14TeV-amcatnloFXFX-pythia8" : 56990.0,
-        "DYJetsToLL_M-10to50_TuneCP5_14TeV-madgraphMLM-pythia8" : 16880.0,
-        "DYToLL_M-50_TuneCP5_14TeV-pythia8" : 5795.0,
-        'DoubleElectron_FlatPt-1To100' : 1.,
-        'MinBias_TuneCP5_14TeV-pythia8' : 80.0E9
-    }
-    dataset_name = job_name.split("__")[0]
-    try:
-        return xsecs[dataset_name]
-    except KeyError:
-        print("{} not found".format(dataset_name))
-        return 0.
-
-def get_qcd_em_filt_eff(min_pt,max_pt):
-    filt_effs = {
-        "0to9999" : 1.0,
-        "15to20" : 0.001569,
-        "20to30" : 0.01232,
-        "30to50" : 0.05929,
-        "50to80" : 0.1253,
-        "80to120" : 0.1547,
-        "120to170" : 0.1634,
-        "170to300" : 0.1593,
-        "300to470" : 1.0,
-        "470to600" : 1.0,
-        "600to9999" : 1.0,
-        "300to9999" : 1.0
-    }
-    key = "{:.0f}to{:.0f}".format(min_pt,max_pt)
-    try:
-        return filt_effs[key]
-    except KeyError:
-        print("{} not found".format(key))
-        return 0.
-
-def get_qcd_filt_effs(min_pt,max_pt):
     
-    filt_effs = {
-        "80to120": {
-            "mu_filt_eff": 0.0219,
-            "mu_em_filt_eff": 0.1367,
-            "em_filt_eff": 0.1563,
-            "em_mu_filt_eff": 0.0177
-        },
-        "170to300": {
-            "mu_filt_eff": 0.0358,
-            "mu_em_filt_eff": 0.1426,
-            "em_filt_eff": 0.1595,
-            "em_mu_filt_eff": 0.0316
-        },
-        "50to80": {
-            "mu_filt_eff": 0.0146,
-            "mu_em_filt_eff": 0.1096,
-            "em_filt_eff": 0.1259,
-            "em_mu_filt_eff": 0.0108
-        },
-        "30to50": {
-            "mu_filt_eff": 0.0082,
-            "mu_em_filt_eff": 0.0491,
-            "em_filt_eff": 0.0593,
-            "em_mu_filt_eff": 0.0059
-        },
-        "15to20": {
-            "mu_em_filt_eff": 0.0012,
-            "em_mu_filt_eff": 0.0015,
-            "em_filt_eff" : 0.001569,
-            "mu_filt_eff" : 0.00328
-        },
-        "20to30": {
-            "mu_filt_eff": 0.0043,
-            "mu_em_filt_eff": 0.01,
-            "em_filt_eff": 0.0122,
-            "em_mu_filt_eff": 0.0031
-        },
-        "120to170": {
-            "mu_filt_eff": 0.0292,
-            "mu_em_filt_eff": 0.1417,
-            "em_filt_eff": 0.1635,
-            "em_mu_filt_eff": 0.0245
-        },
-        "300to9999": {            
-            "mu_filt_eff": 0.,
-            "mu_em_filt_eff": 0.,
-            "em_filt_eff": 0.,
-            "em_mu_filt_eff": 0.
-        },
-        "0to9999": {            
-            "mu_filt_eff": 0.,
-            "mu_em_filt_eff": 0.,
-            "em_filt_eff": 0.,
-            "em_mu_filt_eff": 0.
-        },
-        "300to470": {            
-            "mu_filt_eff": 0.,
-            "mu_em_filt_eff": 0.,
-            "em_filt_eff": 0.,
-            "em_mu_filt_eff": 0.
-        },
-        "470to600": {            
-            "mu_filt_eff": 0.,
-            "mu_em_filt_eff": 0.,
-            "em_filt_eff": 0.,
-            "em_mu_filt_eff": 0.
-        },
-        "600to9999": {            
-            "mu_filt_eff": 0.,
-            "mu_em_filt_eff": 0.,
-            "em_filt_eff": 0.,
-            "em_mu_filt_eff": 0.
-        }
-    }
-    
-    key = "{:.0f}to{:.0f}".format(min_pt,max_pt)
-    try:
-        return filt_effs[key]
-    except KeyError:
-        print("{} not found".format(key))
-        return {            
-            "mu_filt_eff": 0.,
-            "mu_em_filt_eff": 0.,
-            "em_filt_eff": 0.,
-            "em_mu_filt_eff": 0.
-        }   
-        
-        
-
-def get_qcd_xsec(min_pt,max_pt):
-    xsecs = {
-        "0to9999" : 80.0E9,
-        "15to20" : 923300000.0,
-        "20to30" : 436000000.0,
-        "30to50" : 118400000.0,
-        "50to80" : 17650000.0,
-        "80to120" : 2671000.0,
-        "120to170" : 469700.0,
-        "170to300" : 121700.0,
-        "300to470" : 8251.0,
-        "470to600" : 686.4,
-        "600to9999" : 244.8,
-        "300to9999" : 8251.0 + 686.4 + 244.8
-    }
-    key = "{:.0f}to{:.0f}".format(min_pt,max_pt)
-    try:
-        return xsecs[key]
-    except KeyError:
-        print("{} not found".format(key))
-        return 0.
-    
-
-
 def clean_failed_jobs(files_failed):
     """
     function moves failed jobs in a failed subdir folder
@@ -257,55 +85,6 @@ def clean_failed_jobs(files_failed):
             for filename in files_failed:                
                 shutil.move(filename,dest_dir)
 
-def gen_weight_file_v1(job_data):
-    weights_dict = {}
-    for name,data in job_data.iteritems():
-        weights_dict[name] =  {"nrtot": data['job_stats']['nr_tot'], "xsec": data['xsec'], "nrpass": data['job_stats']['nr_pass']}
-    return weights_dict
-
-def get_pthat_range(name):
-    if name.startswith("QCD_"):
-        match = re.search(r'Pt[_-]([0-9]+)[to]+([a-zA-Z0-9]+)',name)
-        sample_min_pt_hat = float(match.group(1) )
-        sample_max_pt_hat = 9999. if match.group(2)=="Inf" else float(match.group(2))
-    else:
-        #min bias
-        sample_min_pt_hat = 0.
-        sample_max_pt_hat = 9999.
-    return sample_min_pt_hat,sample_max_pt_hat
-
-def qcd_weights_v2(sample_name,sample_data,output_data):
-    min_pt,max_pt = get_pthat_range(sample_name)
-    output_entry = None
-    for entry in output_data:
-        if min_pt == entry['min_pt']:
-            output_entry  = entry
-            break
-    if not output_entry:
-        output_entry = {
-            'min_pt' : min_pt,'max_pt' : max_pt, 'xsec' : get_qcd_xsec(min_pt,max_pt),
-            'nr_inclusive' : 0, 'nr_em' : 0, 'nr_mu' : 0
-        }
-        output_entry.update(get_qcd_filt_effs(min_pt,max_pt))
-        
-        output_data.append(output_entry)
-    
-    if sample_name.find("EMEnriched")!=-1:
-        output_entry['nr_em'] = sample_data['job_stats']['nr_tot']
-    elif sample_name.find("MuEnriched")!=-1:
-        output_entry['nr_mu'] = sample_data['job_stats']['nr_tot']
-    else:
-        output_entry['nr_inclusive'] = sample_data['job_stats']['nr_tot']
-    
-def gen_weight_file_v2(job_data):
-    weights_dict = {"qcd" : []}
-    for name,data in job_data.iteritems():
-        if name.startswith("QCD_") or name.startswith("MinBias_"):
-            qcd_weights_v2(name,data,weights_dict['qcd'])
-        else:
-            weights_dict[name] =  {"nrtot": data['job_stats']['nr_tot'], "xsec": data['xsec'], "nrpass": data['job_stats']['nr_pass']}
-    weights_dict['qcd'].sort(key=lambda x : x['min_pt'])
-    return weights_dict
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='tries to open every root file in sub dir')
@@ -323,16 +102,10 @@ if __name__ == "__main__":
         job_data[job_name] = {}
         print("processing {}".format(dir_))
         job_data[job_name]['job_stats'] = process_dir(dir_,"HLTX",args.direct)
-        job_data[job_name]['xsec'] = get_xsec(job_name)
+        #job_data[job_name]['xsec'] = get_xsec(job_name)
         
         
-    weights_dict = {}
-    weights_dict['v1'] = gen_weight_file_v1(job_data)
-    weights_dict['v2'] = gen_weight_file_v2(job_data)
-
-    with open(args.out,'w') as f:
-        json.dump(weights_dict,f)
-
+        
     for name,data in job_data.iteritems():
         with open("{}.list".format(name),"w") as f:
             for filename in data['job_stats']['good_files']:
