@@ -118,7 +118,7 @@ class QCDWeightCalc:
         self.gen_filters.fill(evtdata)
         pass_em = self.gen_filters.result("Gen_QCDEmEnrichingNoBCToEFilter")
         pass_mu = self.gen_filters.result("Gen_QCDMuGenFilter")
-        if  pass_em and pass_mu:
+        if  pass_em or pass_mu:
             geninfo = evtdata.get("geninfo")
             #should never be -1 as we should never hit the underflow 
             #and if so there is a problem
