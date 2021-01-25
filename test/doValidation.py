@@ -8,6 +8,7 @@ import ROOT
 import json
 import re
 import os
+from collections import OrderedDict
 
 from DataFormats.FWLite import Events, Handle
 from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products
@@ -258,9 +259,14 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
     tar_file = ROOT.TFile.Open(tar_filename)
     ref_file = ROOT.TFile.Open(ref_filename)
 
-    tar_index = json.loads(str(tar_file.meta_data))
-    ref_index = json.loads(str(ref_file.meta_data))
+    tar_index = json.loads(str(tar_file.meta_data),object_pairs_hook=OrderedDict)
+    ref_index = json.loads(str(ref_file.meta_data),object_pairs_hook=OrderedDict)
     
+    if tar_label==None:
+        tar_label = str(tar_file.label)
+    if ref_label==None:
+        ref_label = str(ref_file.label)
+
     out_file = ROOT.TFile.Open(os.path.join(out_dir,"output.root"),"RECREATE")
     canvases_to_draw=[]
     toc_str_base = '<br><a href="#{coll}{hist}"><font color={colour}>{coll} : {hist}</font></a>&nbsp;'
@@ -333,8 +339,8 @@ if __name__ == "__main__":
     parser.add_argument('--ref',required=True,help='reference filename')
     parser.add_argument('--tar',required=True,help='target filename')
     parser.add_argument('--out_dir','-o',default="./",help='output dir')
-    parser.add_argument('--tar_label',default="tar",help="target label for leg")
-    parser.add_argument('--ref_label',default="ref",help="reference label for leg")
+    parser.add_argument('--tar_label',default=None,help="target label for leg")
+    parser.add_argument('--ref_label',default=None,help="reference label for leg")
     args = parser.parse_args()
 
     ROOT.gROOT.SetBatch()
