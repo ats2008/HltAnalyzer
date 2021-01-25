@@ -200,10 +200,15 @@ def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=No
     hist_coll.add_hist('var("hltEgammaEcalPFClusterIsoUnseeded",0)',"ecalPFClusIso",";ecal pf clus isol [GeV];entries",100,0,20)
     hist_coll.add_hist('var("hltEgammaHcalPFClusterIsoUnseeded",0)',"hcalPFClusIso",";hcal pf clus isol [GeV];entries",100,0,20)
     hist_coll.add_hist('var("hltEgammaHGCalPFClusterIsoUnseeded",0)',"hgcalPFClusIso",";hgcal pf clus isol [GeV];entries",100,0,20)
-    hist_coll.add_hist('var("hltEgammaHoverEUnseeded",0)',"hForHOverE",";H for H/E [GeV];entries",100,0,20)
-    hist_coll.add_hist('var("hltEgammaPixelMatchVarsUnseeded_s2,0)',"pmS2","PM S2",100,0,100)
+    hist_coll.add_hist('var("hltEgammaHoverEUnseeded",0)',"hcalHForHOverE",";HCAL H for H/E [GeV];entries",100,0,20)
+    hist_coll.add_hist('var("hltEgammaHGCALIDVarsUnseeded_hForHOverE",0)',"hgcalHForHOverE",";HGCAL H for H/E [GeV];entries",100,0,20) 
+    hist_coll.add_hist('var("hltEgammaHGCALIDVarsUnseeded_sigma2uu",0)',"sigma2uu",";#sigma^{2}_{uu};entries",100,0,50)
+    hist_coll.add_hist('var("hltEgammaHGCALIDVarsUnseeded_sigma2vv",0)',"sigma2vv",";#sigma^{2}_{vv};entries",100,0,2)
+    hist_coll.add_hist('var("hltEgammaHGCALIDVarsUnseeded_sigma2ww",0)',"sigma2ww",";#sigma^{2}_{ww};entries",100,0,250)
+    
     
     if add_gsf:
+        hist_coll.add_hist('var("hltEgammaPixelMatchVarsUnseeded_s2,0)',"pmS2","PM S2",100,0,100)
         hist_coll.add_hist("gsfTracks().at(0).pt()","gsfTrkPt",";GsfTrk p_{T} [GeV];entries",20,0,100)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Chi2")',"gsfChi2","Gsf Track #chi^{2}",100,0,100)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_DetaSeed")',"deltaEtaInSeed","#Delta#eta_{in}^{seed}",100,0,0.02)
@@ -213,6 +218,8 @@ def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=No
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP")',"invEminusInvP","1/E - 1/p",100,-0.5,2)
         hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoUnseeded")',"trkIsoV0","trk V0 isol",100,0,20)
         hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoV6Unseeded")',"trkIsoV6","trk V6 isol",100,0,20)
+        hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoV72Unseeded")',"trkIsoV72","trk V72 isol",100,0,20)
+        hist_coll.add_hist('var("hltEgammaEleL1TrkIsoUnseeded",0)',"trkIsoL1","L1 trk isol",100,0,20)
        
         
         
