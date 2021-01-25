@@ -13,6 +13,7 @@ from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
+from Analysis.HLTAnalyserPy.Trees import HLTRateTree
         
         
 
@@ -38,14 +39,17 @@ if __name__ == "__main__":
 #    add_product(products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
     add_product(products,"pu_sum","std::vector<PileupSummaryInfo>","slimmedAddPileupInfo")
     add_product(products,"geninfo","GenEventInfoProduct","generator")
-    add_product(products,"pu_weight","double","stitchingWeight")
-    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::RateSkim")
+#    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::RateSkim")
+    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::HLT")
     add_product(products,"trig_res_hlt","edm::TriggerResults","TriggerResults::HLT")
 
     evtdata = EvtData(products,verbose=args.verbose)
     
     in_filenames = CoreTools.get_filenames(args.in_filenames,args.prefix)
     events = Events(in_filenames,maxEvents=args.maxevents)
+
+    out_file = ROOT.TFile(args.out_file,"RECREATE")
+    rate_tree = HLTRateTree("rateTree",args.weights,"trig_res_hlt")
 
     for eventnr,event in enumerate(events):
         if eventnr%10000==0:
@@ -57,9 +61,12 @@ if __name__ == "__main__":
             print("{} / {} time: {:.1f}s, est finish {}".format(eventnr,events.size(),elapsed_time,est_finish))
         
         evtdata.get_handles(event)
-        weight = weight_calc.weight(evtdata)
+#        weight = weight_calc.weight(evtdata)
+        weight = 1.0
         rates.fill(evtdata,weight)
-
-    with open(args.out_file,'w') as f:
+        rate_tree.fill(evtdata)
+    
+    out_file.Write()
+    with open("test.json",'w') as f:
         json.dump(rates.get_results(),f)
 
