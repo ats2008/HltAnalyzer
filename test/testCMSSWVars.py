@@ -8,7 +8,7 @@ import ROOT
 import json
 import re
 from DataFormats.FWLite import Events, Handle
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products, add_product,get_objs,QCDWeightCalc
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products, add_product,get_objs
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
