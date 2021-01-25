@@ -5,9 +5,11 @@ import argparse
 import ROOT
 import json
 import random
+import time
 from array import array
 from DataFormats.FWLite import Events, Handle
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products,add_product,QCDWeightCalc,EvtWeights,EvtWeightsV2
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products,add_product
+from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
@@ -29,14 +31,16 @@ if __name__ == "__main__":
     
     products = []
     add_product(products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
+    #add_product(products,"pu_sum","std::vector<PileupSummaryInfo>","slimmedAddPileupInfo")
     add_product(products,"geninfo","GenEventInfoProduct","generator")
     add_product(products,"pu_weight","double","stitchingWeight")
-    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::PUSkim")
+#    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::RateSkim")
+    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::HLTX")
 
     evtdata = EvtData(products,verbose=args.verbose)
     
     in_filenames = CoreTools.get_filenames(args.in_filenames,args.prefix)
-    events = Events(in_filenames)
+    events = Events(in_filenames,maxEvents=args.maxevents)
     print("setup events")
     out_file = ROOT.TFile(args.out_file,"RECREATE")
     hists = []
@@ -67,31 +71,34 @@ if __name__ == "__main__":
     putree.Branch("weightV2CPP",tree_weight_v2_cpp,"weightV2CPP/F")
     putree.Branch("filtWeightV2CPP",tree_filtweight_v2_cpp,"filtWeightV2CPP/F")
 
-    with open(args.weights) as f:
-       import json
-       weights = json.load(f)
-
-    qcd_weight_calc = EvtWeightsV2(input_dict=weights) 
+  
     qcd_weight_calc_cpp = ROOT.QCDWeightCalc(args.weights)
-  #  qcd_weight_calc = QCDWeightCalc(weights['v2']['qcd'],use_em_filt=args.em_filt)
-    weight_calc = EvtWeights(input_dict=weights["v1"],corr_for_pu=True)
+    weight_calc = EvtWeights(args.weights)
     gen_filters = TrigTools.TrigResults(["Gen_QCDMuGenFilter",
                                          "Gen_QCDBCToEFilter",
                                          "Gen_QCDEmEnrichingFilter",
                                          "Gen_QCDEmEnrichingNoBCToEFilter"])
     
+    start_time = time.time()
+    
     for eventnr,event in enumerate(events):
-        if eventnr%1000==0:
-            print("{} / {}".format(eventnr,events.size()))
+        if eventnr%10000==0:
+            elapsed_time = time.time()-start_time
+            est_finish = "n/a"
+            if eventnr!=0 or elapsed_time==0:
+                remaining = float(events.size()-eventnr)/eventnr*elapsed_time 
+                est_finish = time.ctime(remaining+start_time+elapsed_time)
+            print("{} / {} time: {:.1f}s, est finish {}".format(eventnr,events.size(),elapsed_time,est_finish))
 
         if args.maxevents>0 and eventnr>args.maxevents:
             break
 
         evtdata.get_handles(event)
         pu_sum  = evtdata.get("pu_sum")
+        pu_sum_intime = [x for x in evtdata.get("pu_sum") if x.getBunchCrossing()==0]
         geninfo = evtdata.get("geninfo")
         gen_filters.fill(evtdata)
-        pt_hats = [x for x in pu_sum[3].getPU_pT_hats()]
+        pt_hats = [x for x in pu_sum_intime[0].getPU_pT_hats()]
         pt_hats.append(geninfo.qScale())
         pt_hats.sort(reverse=True)
         
@@ -99,17 +106,14 @@ if __name__ == "__main__":
         pass_mu = gen_filters.result("Gen_QCDMuGenFilter")
       
         pt_hats_vec = ROOT.std.vector("float")()
-        for pt_hat in pu_sum[3].getPU_pT_hats():
+        for pt_hat in pu_sum_intime[0].getPU_pT_hats():
             pt_hats_vec.push_back(pt_hat)
         
-
-        #weight = qcd_weight_calc.weight(evtdata)
-     #   weight = qcd_weight_calc.weight_from_evt(evtdata)
-        weight = qcd_weight_calc.weight_from_name("QCD",evtdata)
+        weight =1.0
+        weight = weight_calc.weight(evtdata)
         weight_cpp = qcd_weight_calc_cpp.weight(geninfo.qScale(),pt_hats_vec,pass_em,pass_mu)
         weight_cpp_filt = qcd_weight_calc_cpp.filtWeight(geninfo.qScale(),pass_em,pass_mu)
-        
-
+       
         for histnr,pt_hat in enumerate(pt_hats):
             if histnr<len(hists):
                 hists[histnr].Fill(pt_hat,weight)
@@ -119,18 +123,18 @@ if __name__ == "__main__":
         for pt_hat in pt_hats:
             tree_pt_hats.push_back(pt_hat)
         tree_nr_pt_hats = tree_pt_hats.size()
-       # tree_weight_v1[0] = weight_calc.weight_from_evt(event.object(),evtdata)
-    #    tree_weight_v1[0] = evtdata.get("pu_weight")[0]
-        tree_weight_v1[0] = qcd_weight_calc.weight_from_name("QCD",evtdata,EvtWeightsV2.WeightType.V1)
+      
+    
+        tree_weight_v1[0] = weight_calc.filtweight(evtdata)
         tree_weight_v2[0] = weight 
-        tree_hard_pt_hat[0] = geninfo.qScale()
-        tree_emweight_v2[0] = qcd_weight_calc.weight_from_name("QCD",evtdata,EvtWeightsV2.WeightType.V1)
-        tree_pass_em[0] = pass_em
-        tree_pass_mu[0] = pass_mu
         tree_weight_v2_cpp[0] = weight_cpp
         tree_filtweight_v2_cpp[0] = weight_cpp_filt
+        tree_hard_pt_hat[0] = geninfo.qScale()
+        tree_emweight_v2[0] = 0.
+        tree_pass_em[0] = pass_em
+        tree_pass_mu[0] = pass_mu
         
-      
+        print("py",tree_weight_v1[0],"cpp", tree_filtweight_v2_cpp[0])
         putree.Fill()
         
        
