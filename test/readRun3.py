@@ -68,3 +68,7 @@ if __name__ == "__main__":
     print("number of events",events.size())
 
     
+    for eventnr,event in enumerate(events):
+        evtdata.get_handles(events)
+        geninfo = evtdata.get("geninfo")
+        print(geninfo.signalProcessID(),str(geninfo.binningValues()),str(geninfo.DJRValues()))
