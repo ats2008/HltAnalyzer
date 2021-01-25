@@ -21,6 +21,7 @@ def main():
     parser.add_argument('--weights','-w',default=None,help="weights filename")
     parser.add_argument('--report','-r',default=10,type=int,help="report every N events")
     parser.add_argument('--nr_threads','-t',default=8,type=int,help='number of threads')
+    parser.add_argument('--reg_hgcal',default=None,help='filename of file with hgcal regression')
     args = parser.parse_args()
 
     if not os.path.exists(args.out_dir):
@@ -48,7 +49,8 @@ def main():
         out_file = out_file.replace(".list.root",".root")
         
         weights_arg = "-w {}".format(args.weights) if args.weights else ""
-        ntupcmd = "python {ntup_script} --min_et {a.min_et} -r 5000 {weights_arg}".format(ntup_script=ntup_script,a=args,weights_arg=weights_arg)
+        reg_arg = "--reg_hgcal {}".format(args.reg_hgcal) if args.reg_hgcal else ""
+        ntupcmd = "python {ntup_script} --min_et {a.min_et} -r 5000 {weights_arg} {reg_arg}".format(ntup_script=ntup_script,a=args,weights_arg=weights_arg,reg_arg=reg_arg)
         if dir_.endswith(".list"):
             input_files = CoreTools.get_filenames([dir_])
         else:

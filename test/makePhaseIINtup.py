@@ -60,6 +60,37 @@ def cal_r9(obj,evtdata,frac=True):
                     e3x3+=hit_energy
     return e3x3/sc.rawEnergy()
 
+class BDTOutputTransformer:
+    def __init__(self,limit_low,limit_high):
+        self.offset = limit_low + 0.5 * (limit_high - limit_low)
+        self.scale = 0.5 * (limit_high - limit_low)
+    def transform(self,raw_val):
+        return self.offset + self.scale * math.sin(raw_val)
+
+def apply_hltreg(obj,evtdata,mean_forest_hgcal):
+    if mean_forest_hgcal and obj.superCluster().seed().seed().det()==ROOT.DetId.HGCalEE:
+        data = ROOT.std.vector(float)(7,0.)
+        sc = obj.superCluster()
+        counts = ["nrHitsEB1GeV","nrHGCalEE1GeV","nrHGCalHEB1GeV","nrHGCalHEF1GeV"]
+        for count in counts:
+            data[0] += evtdata.get(count)[0]
+        data[1] = sc.eta()
+        data[2] = sc.phiWidth()
+        data[3] = obj.var("hltEgammaHGCALIDVarsUnseeded_rVar")
+        data[4] = sc.clusters().size() - 1 
+        data[5] = cal_cluster_maxdr(obj)
+        data[6] = sc.rawEnergy()
+        
+        out_trans = BDTOutputTransformer(0.2,2)
+        mean_raw = mean_forest_hgcal.GetResponse(data.data())
+        mean = out_trans.transform(mean_raw)
+        obj.setEnergyPtEtaPhi(mean*obj.energy(),mean*obj.pt(),obj.eta(),obj.phi())
+    elif obj.superCluster().seed().seed().det()==ROOT.DetId.Ecal:
+        mean = 1.023
+        obj.setEnergyPtEtaPhi(mean*obj.energy(),mean*obj.pt(),obj.eta(),obj.phi())
+
+        
+
 def fix_hgcal_hforhe(obj,evtdata):
     layerclus = evtdata.get("hglayerclus")
     hforhe = ROOT.HGCalClusterTools.hadEnergyInCone(obj.eta(),obj.phi(),layerclus,0,0.15,0.,0.)
@@ -84,10 +115,16 @@ def main():
     parser.add_argument('--min_et','-m',default=20.,type=float,help='minimum eg et') 
     parser.add_argument('--weights','-w',default=None,help="weights filename")
     parser.add_argument('--report','-r',default=10,type=int,help="report every N events")
+    parser.add_argument('--reg_hgcal',default=None,help='filename of file with hgcal regression')
     args = parser.parse_args()
     
     evtdata = EvtData(phaseII_products,verbose=True)
     weights = EvtWeights(args.weights) if args.weights else None
+    mean_forest_hgcal = None
+    if args.reg_hgcal:
+        reg_file =  ROOT.TFile.Open(args.reg_hgcal,"READ")
+        mean_forest_hgcal = reg_file.EECorrection
+    
 
     out_file = ROOT.TFile(args.out_filename,"RECREATE")
 
@@ -122,9 +159,11 @@ def main():
         'r9Frac/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=True)),
         'clusterMaxDR/F' : cal_cluster_maxdr
     })
-    eghlt_tree.add_eg_update_funcs([
+    eghlt_tree.add_eg_update_funcs([ 
+        CoreTools.UnaryFunc(partial(apply_hltreg,evtdata,mean_forest_hgcal))
       #  CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
     ])
+    
 
     events = Events(CoreTools.get_filenames(args.in_filenames))
     nr_events = events.size()
