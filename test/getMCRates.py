@@ -39,8 +39,8 @@ if __name__ == "__main__":
 #    add_product(products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
     add_product(products,"pu_sum","std::vector<PileupSummaryInfo>","slimmedAddPileupInfo")
     add_product(products,"geninfo","GenEventInfoProduct","generator")
-#    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::RateSkim")
-    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::HLT")
+    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::RateSkim")
+#    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::HLT")
     add_product(products,"trig_res_hlt","edm::TriggerResults","TriggerResults::HLT")
 
     evtdata = EvtData(products,verbose=args.verbose)
@@ -61,8 +61,8 @@ if __name__ == "__main__":
             print("{} / {} time: {:.1f}s, est finish {}".format(eventnr,events.size(),elapsed_time,est_finish))
         
         evtdata.get_handles(event)
-#        weight = weight_calc.weight(evtdata)
-        weight = 1.0
+        weight = weight_calc.weight(evtdata)
+#        weight = 1.0
         rates.fill(evtdata,weight)
         rate_tree.fill(evtdata)
     
