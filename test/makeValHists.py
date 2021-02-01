@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='example e/gamma HLT analyser')
     parser.add_argument('in_names',nargs="+",help='input filenames')
     parser.add_argument('--prefix','-p',default='file:',help='file prefix')
-    parser.add_argument('--out_name','-o',default="./",help='output filename')
+    parser.add_argument('--out_name','-o',required=True,help='output filename')
     parser.add_argument('--label','-l',default="",help="label for leg")
     args = parser.parse_args()
 
