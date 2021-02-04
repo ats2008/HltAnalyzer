@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import ROOT
 from enum import Enum
+from enum import IntEnum
 import json
 import re
 
@@ -103,36 +104,106 @@ def match_to_gen(eta,phi,genparts,pid=11,antipart=True,max_dr=0.1,status=PartSta
             best_dr2 = dr2
     return best_match,best_dr2
 
-class EvtWeights:
-    """ 
-    class reads in a weights file and determines from the file the event is in
-    what the weight should be 
-    
-    usage: 
-    weights = EvtWeights("weights_file")
-    weight = weights.weight_from_evt(event.object())
-    """
 
-    def __init__(self,input_filename,lumi=0.075):
-        if input_filename: 
-            with open(input_filename,'r') as f:
-                self.data = json.load(f)
+class MCSample:
+    class ProcType(IntEnum):
+        Unknown=0
+        MB = 1
+        QCD = 2
+        DY = 3
+        WJets = 4
+    class FiltType(IntEnum):
+        Incl=0
+        Em = 1
+        Mu = 2
+
+    def __init__(self,proc_type=ProcType.Unknown,
+                 filt_type=FiltType.Incl,
+                 min_pthat=0,max_pthat=9999,
+                 com_energy=0):
+        self.proc_type = proc_type
+        self.filt_type = filt_type
+        self.min_pthat = min_pthat
+        self.max_pthat = max_pthat
+        self.com_energy = com_energy
+        
+    def __str__(self):
+        return "ProcType {s.proc_type} FiltType {s.filt_type}  min pthat {s.min_pthat} max pthat {s.max_pthat}".format(s=self)
+
+        
+class MCSampleGetter:
+    def __init__(self):
+        self.last_type = MCSample()
+        self.last_file = None
+        self.getval_re = re.compile(r'[= ]([0-9.]+)')
+
+    def get(self,evtdata=None):
+        """
+        this is keyed to the TSG samples which are all pythia except WJets
+        it also assumes a given file will only contain a given process
+        """
+        if not evtdata:
+            return self.last_type
+
+        if self.last_file==evtdata.event.object().getTFile().GetName():            
+            return self.last_type
+
+        self.last_file=evtdata.event.object().getTFile().GetName()
+        
+        sig_id = evtdata.get("geninfo").signalProcessID()
+        if not hasattr(ROOT,"getCOMEnergy"):
+            ROOT.gInterpreter.Declare("""
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+double getCOMEnergy(edm::ParameterSet& pset){
+   const auto& genPSet = pset.getParameterSet("generator");
+   return genPSet.getParameter<double>("comEnergy");
+}
+                """)
+        cfg = ROOT.edm.ProcessConfiguration()  
+        proc_hist = evtdata.event.object().processHistory() 
+        proc_hist.getConfigurationForProcess("SIM",cfg) 
+        cfg_pset = evtdata.event.object().parameterSet(cfg.parameterSetID())  
+        com_energy = ROOT.getCOMEnergy(cfg_pset)
+        
+        if sig_id >=101 and sig_id<=106:
+            self.last_type = MCSample(MCSample.ProcType.MB,com_energy=com_energy)
+        elif sig_id>=111 and sig_id<=124:
+            if not hasattr(ROOT,"qcdMCFiltType"):
+                ROOT.gInterpreter.Declare("""
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+int qcdMCFiltType(edm::ParameterSet& pset,const int inclCode,const int emCode,const int muCode){
+   if(pset.exists("emenrichingfilter")) return emCode;
+   else if(pset.exists("mugenfilter")) return muCode;
+   else return inclCode;
+}
+                """)  
+                ROOT.gInterpreter.Declare("""
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+std::vector<std::string> getGenProcParam(edm::ParameterSet& pset){
+   const auto& genPSet = pset.getParameterSet("generator");
+   const auto& pythPSet = genPSet.getParameterSet("PythiaParameters");
+   return pythPSet.getParameter<std::vector<std::string> >("processParameters");
+}
+                """)
+              
+            filt_type = ROOT.qcdMCFiltType(cfg_pset,MCSample.FiltType.Incl,MCSample.FiltType.Em,
+                                           MCSample.FiltType.Mu)
+            proc_params = ROOT.getGenProcParam(cfg_pset)
+            min_pthat = 0
+            max_pthat = 9999
+            for param in proc_params:
+                if param.lstrip().startswith("PhaseSpace:pTHatMin"):
+                    min_pthat = float(self.getval_re.search(param).group(1))
+                if param.lstrip().startswith("PhaseSpace:pTHatMax"):
+                    max_pthat = float(self.getval_re.search(param).group(1))
+            self.last_type = MCSample(MCSample.ProcType.QCD,filt_type,min_pthat,max_pthat,com_energy)
+
+        elif sig_id==221:
+            self.last_type = MCSample(MCSample.ProcType.DY,com_energy=com_energy)
+        elif sig_id==9999:
+            #not this just means its an external generator but our only one is WJets 
+            self.last_type = MCSample(MCSample.ProcType.WJets,com_energy=com_energy)
         else:
-            self.data = {}            
-        self.warned = []
-        self.lumi = lumi #luminosity to weight to in pb
-
-    def weight_from_name(self,dataset_name):
-        if dataset_name in self.data:
-            val = self.data[dataset_name]
-            return val['xsec']/val['nrtot']*self.lumi
-        else:
-            if dataset_name not in self.warned:
-                self.warned.append(dataset_name) 
-                print("{} not in weights file, returning weight 1".format(dataset_name))
-            return 1.
-
-    def weight_from_evt(self,event):
-        filename = event.getTFile().GetName().split("/")[-1]
-        dataset_name = re.search(r'(.+)(_\d+_EDM.root)',filename).groups()[0]
-        return self.weight_from_name(dataset_name)
+            self.last_type = MCSample(MCSample.ProcType.Unknown)
+        
+        return self.last_type

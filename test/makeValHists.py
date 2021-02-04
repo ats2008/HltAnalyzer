@@ -8,6 +8,7 @@ import ROOT
 import json
 import re
 import os
+from collections import OrderedDict
 
 from DataFormats.FWLite import Events, Handle
 from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products
@@ -16,7 +17,7 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
 
-def make_val_hists(in_filenames,out_name):
+def make_val_hists(in_filenames,out_name,label):
     evtdata = EvtData(phaseII_products,verbose=True)
 
     events = Events(in_filenames)
@@ -28,7 +29,7 @@ def make_val_hists(in_filenames,out_name):
     cutbins = [HistTools.CutBin("et()","Et",[20,100]),
                HistTools.CutBin("eta()","AbsEta",[0,1.4442,None,1.57,2.5,3.0],do_abs=True)]
 
-    hist_meta_data = {}
+    hist_meta_data = OrderedDict()
     desc = "Gen Matched Electrons"
     hists_genmatch = HistTools.create_histcoll(tag="GenMatch",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
     desc = "Gen Matched Electrons with Pixel Match"
@@ -37,11 +38,11 @@ def make_val_hists(in_filenames,out_name):
     hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="GenMatchTrk",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
 
     desc = "Non Gen Matched Electrons"
-    hists_genmatch = HistTools.create_histcoll(tag="NoGenMatch",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
+    hists_nogenmatch = HistTools.create_histcoll(tag="NoGenMatch",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
     desc = "Non Gen Matched Electrons with Pixel Match"
-    hists_genmatch_seed = HistTools.create_histcoll(tag="NoGenMatchSeed",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
+    hists_nogenmatch_seed = HistTools.create_histcoll(tag="NoGenMatchSeed",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
     desc = "Non Gen Matched Electrons with GsfTrack"
-    hists_genmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="NoGenMatchTrk",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
+    hists_nogenmatch_trk = HistTools.create_histcoll(add_gsf=True,tag="NoGenMatchTrk",cutbins=cutbins,desc=desc,norm_val=nr_events,meta_data=hist_meta_data)
 
     
     for event_nr,event in enumerate(events):
@@ -65,11 +66,11 @@ def make_val_hists(in_filenames,out_name):
                     hists_genmatch_trk.fill(egobj,weight)
             else:
                 egobj.et_gen = -999
-                hists_genmatch.fill(egobj,weight)
+                hists_nogenmatch.fill(egobj,weight)
                 if not egobj.seeds().empty():
-                    hists_genmatch_seed.fill(egobj,weight)
+                    hists_nogenmatch_seed.fill(egobj,weight)
                 if not egobj.gsfTracks().empty():                    
-                    hists_genmatch_trk.fill(egobj,weight)
+                    hists_nogenmatch_trk.fill(egobj,weight)
 
     
     out_file.cd()
@@ -87,6 +88,7 @@ def make_val_hists(in_filenames,out_name):
        file->WriteObjectAny(&str,"std::string",name.c_str());
     }""")
     ROOT.writeStr(out_file,hist_md_str,"meta_data")
+    ROOT.writeStr(out_file,label,"label")
     out_file.Write()
 #    with open(out_name.replace(".root",".json"),'w') as f:
  #       json.dump(hist_meta_data,f)
@@ -100,9 +102,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='example e/gamma HLT analyser')
     parser.add_argument('in_names',nargs="+",help='input filenames')
     parser.add_argument('--prefix','-p',default='file:',help='file prefix')
-    parser.add_argument('--out_name','-o',default="./",help='output filename')
+    parser.add_argument('--out_name','-o',required=True,help='output filename')
     parser.add_argument('--label','-l',default="",help="label for leg")
     args = parser.parse_args()
 
     in_filenames = CoreTools.get_filenames(args.in_names,args.prefix)
-    make_val_hists(in_filenames,args.out_name)
+    make_val_hists(in_filenames,args.out_name,args.label)

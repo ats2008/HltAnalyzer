@@ -3,9 +3,10 @@ import sys
 from DataFormats.FWLite import Events, Handle
 import ROOT
 from functools import partial
+import math
 
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles, EvtWeightsV2, phaseII_products
-
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles, phaseII_products
+from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
@@ -14,6 +15,81 @@ import Analysis.HLTAnalyserPy.GsfTools as GsfTools
 import Analysis.HLTAnalyserPy.IsolTools as IsolTools
 import Analysis.HLTAnalyserPy.PixelMatchTools as PixelMatchTools
 from Analysis.HLTAnalyserPy.Trees import EgHLTTree
+
+def cal_cluster_maxdr(obj):
+    max_dr2 = 0.
+    sc = obj.superCluster()
+    seed_eta = sc.seed().eta()
+    seed_phi = sc.seed().phi()
+    for clus in sc.clusters():
+        if clus == sc.seed():
+            continue
+        dr2 = ROOT.reco.deltaR2(clus.eta(),clus.phi(),seed_eta,seed_phi)
+        max_dr2 = max(max_dr2,dr2)
+        
+    #ECAL takes 999. if not other cluster for maxDR2
+    if max_dr2==0. and sc.seed().seed().det()==ROOT.DetId.Ecal:
+        return 999.
+    else:
+        return math.sqrt(max_dr2)
+
+def get_hit_frac(detid,hits_and_fracs):
+    for hit_and_frac  in hits_and_fracs:
+        if hit_and_frac.first==detid:
+            return hit_and_frac.second
+    return 0.
+
+def cal_r9(obj,evtdata,frac=True):
+    sc = obj.superCluster()
+    seed_id = sc.seed().seed()
+    if seed_id.det()!=ROOT.DetId.Ecal or sc.rawEnergy()==0:
+        return 0
+
+    seed_id = ROOT.EBDetId(seed_id)
+    e3x3 = 0.
+    hits = evtdata.get("ebhits")
+    for local_ieta in [-1,0,1]:
+        for local_iphi in [-1,0,1]:
+            hit_id = seed_id.offsetBy(local_ieta,local_iphi)
+            if hit_id.rawId()!=0:
+                hit = hits.find(hit_id)
+                if hit!=hits.end():
+                    hit_energy = hit.energy()
+                    if frac:
+                        hit_energy *=get_hit_frac(hit_id,sc.seed().hitsAndFractions())
+                    e3x3+=hit_energy
+    return e3x3/sc.rawEnergy()
+
+class BDTOutputTransformer:
+    def __init__(self,limit_low,limit_high):
+        self.offset = limit_low + 0.5 * (limit_high - limit_low)
+        self.scale = 0.5 * (limit_high - limit_low)
+    def transform(self,raw_val):
+        return self.offset + self.scale * math.sin(raw_val)
+
+def apply_hltreg(obj,evtdata,mean_forest_hgcal):
+    if mean_forest_hgcal and obj.superCluster().seed().seed().det()==ROOT.DetId.HGCalEE:
+        data = ROOT.std.vector(float)(7,0.)
+        sc = obj.superCluster()
+        counts = ["nrHitsEB1GeV","nrHGCalEE1GeV","nrHGCalHEB1GeV","nrHGCalHEF1GeV"]
+        for count in counts:
+            data[0] += evtdata.get(count)[0]
+        data[1] = sc.eta()
+        data[2] = sc.phiWidth()
+        data[3] = obj.var("hltEgammaHGCALIDVarsUnseeded_rVar")
+        data[4] = sc.clusters().size() - 1 
+        data[5] = cal_cluster_maxdr(obj)
+        data[6] = sc.rawEnergy()
+        
+        out_trans = BDTOutputTransformer(0.2,2)
+        mean_raw = mean_forest_hgcal.GetResponse(data.data())
+        mean = out_trans.transform(mean_raw)
+        obj.setEnergyPtEtaPhi(mean*obj.energy(),mean*obj.pt(),obj.eta(),obj.phi())
+    elif obj.superCluster().seed().seed().det()==ROOT.DetId.Ecal:
+        mean = 1.023
+        obj.setEnergyPtEtaPhi(mean*obj.energy(),mean*obj.pt(),obj.eta(),obj.phi())
+
+        
 
 def fix_hgcal_hforhe(obj,evtdata):
     layerclus = evtdata.get("hglayerclus")
@@ -39,10 +115,16 @@ def main():
     parser.add_argument('--min_et','-m',default=20.,type=float,help='minimum eg et') 
     parser.add_argument('--weights','-w',default=None,help="weights filename")
     parser.add_argument('--report','-r',default=10,type=int,help="report every N events")
+    parser.add_argument('--reg_hgcal',default=None,help='filename of file with hgcal regression')
     args = parser.parse_args()
     
     evtdata = EvtData(phaseII_products,verbose=True)
-    weights = EvtWeightsV2(args.weights) if args.weights else None
+    weights = EvtWeights(args.weights) if args.weights else None
+    mean_forest_hgcal = None
+    if args.reg_hgcal:
+        reg_file =  ROOT.TFile.Open(args.reg_hgcal,"READ")
+        mean_forest_hgcal = reg_file.EECorrection
+    
 
     out_file = ROOT.TFile(args.out_filename,"RECREATE")
 
@@ -73,11 +155,15 @@ def main():
         'hcalH_dep4/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=4)),
         'pms2/F' : PixelMatchTools.get_pms2_phase2,
         'hgcaliso_layerclus/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso_layerclus,evtdata,min_dr_had=0.0,min_dr_em=0.02,max_dr=0.2,min_energy_had=0.07,min_energy_em=0.02)),
-
+        'r9Full/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=False)),
+        'r9Frac/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=True)),
+        'clusterMaxDR/F' : cal_cluster_maxdr
     })
-    eghlt_tree.add_eg_update_funcs([
+    eghlt_tree.add_eg_update_funcs([ 
+        CoreTools.UnaryFunc(partial(apply_hltreg,evtdata,mean_forest_hgcal))
       #  CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
     ])
+    
 
     events = Events(CoreTools.get_filenames(args.in_filenames))
     nr_events = events.size()

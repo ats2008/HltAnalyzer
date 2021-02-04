@@ -128,7 +128,7 @@ There is an additional complication for enriched entries. In this case, we do no
 
 Note none of this applies to W+jets or DY samples which should be weighted as normal as they are a different generator process to the pileup.
 
-###Usage
+### Usage
 
 There are two classes to use, a python based on and a c++ one. The python is EvtData.QCDWeightCalc and there is a c++ implimenation QCDWeightCalc
 
@@ -152,7 +152,12 @@ The parameters are
 
 Note, the minbias bin should be also included here. It should have a range of min_pt of 0 and max_pt of 9999. It is the only bin which is allowed to overlap with other bins, all the other pt bins must be exclusive to each other. In the future we may end up seperating out the minbias bin to its own category due to this bin being special. 
 
-A script to generate this json is fileChecker.py but it needs to be made more general
+A script to generate this json is [makeWeightsJson.py](test/makeWeightsJson.py). The script can detect if its running on a DY, WJets, MB and QCD sample and assign the count accordingly. So just put as input all the files you wish to run over for the rates. It does not handle binned DY or WJets yet.
+
+```
+python test/makeWeightsJson.py <inputfiles> -o output_filename_with_weights.json"
+```
+
 
 #### c++ instructions
 

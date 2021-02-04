@@ -8,7 +8,7 @@ import ROOT
 import json
 import re
 from DataFormats.FWLite import Events, Handle
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products, add_product,get_objs
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,std_products, add_product,get_objs,QCDWeightCalc
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
@@ -59,15 +59,8 @@ if __name__ == "__main__":
     parser.add_argument('--prefix','-p',default='file:',help='file prefix')
     parser.add_argument('--out','-o',default="output.root",help='output filename')
     args = parser.parse_args()
-    add_product(phaseII_products,"countEcalRecHitsEBThres0GeV","int","hltEgammaHLTExtra:countEcalRecHitsEcalRecHitsEBThres0GeV")
-    add_product(phaseII_products,"countEcalRecHitsEBThres1GeV","int","hltEgammaHLTExtra:countEcalRecHitsEcalRecHitsEBThres1GeV")
-    add_product(phaseII_products,"ecalHitsTest","edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> >","hltEcalRecHit:EcalRecHitsEB")
-    add_product(phaseII_products,"hgcalTest","edm::SortedCollection<HGCRecHit,edm::StrictWeakOrdering<HGCRecHit> >","HGCalRecHit:HGCHEBRecHits")
-    add_product(phaseII_products,"countHGCal1GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCHEBRecHitsThres1GeV")
-    add_product(phaseII_products,"countHGCal0GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCHEBRecHitsThres0GeV")
-    
-    
-    evtdata = EvtData(phaseII_products,verbose=True)
+
+    evtdata = EvtData(std_products,verbose=True)
     
     in_filenames_with_prefix = ['{}{}'.format(args.prefix,x) for x in args.in_filename]
     events = Events(in_filenames_with_prefix)
@@ -75,11 +68,7 @@ if __name__ == "__main__":
     print("number of events",events.size())
 
     
-#    with open("weights_test_qcd.json") as f:
-#       import json
-#       weights = json.load(f)
-
-#    weighter = QCDWeightCalc(weights["v2"]["qcd"])
-#    events.to(3)
-#    evtdata.get_handles(events)
-#    weighter.weight(evtdata)
+    for eventnr,event in enumerate(events):
+        evtdata.get_handles(events)
+        geninfo = evtdata.get("geninfo")
+        print(geninfo.signalProcessID(),str(geninfo.binningValues()),str(geninfo.DJRValues()))

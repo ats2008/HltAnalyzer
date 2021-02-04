@@ -41,7 +41,7 @@ def get_hlt_iso(egobj,evtdata,trkcoll="trksv6",min_pt=1.,max_dz=0.15,min_deta=0.
 def get_l1_iso(egobj,evtdata,min_pt=2.,max_dz=0.7,min_deta=0.003,max_dr2=0.3*0.3,min_dr2=0.01*0.01):
 
     if egobj.gsfTracks().empty():
-        return 99. # if no gsf track, then that SC do not pass track isolation  
+        return 99999. # if no gsf track, then that SC do not pass track isolation  
 
     indx_bestgsf = GsfTools.get_indx_best_gsf(egobj)
 
@@ -127,15 +127,10 @@ def get_hcalen_depth(egobj,evtdata,depth=1):
     seed_ebid = ROOT.EBDetId(seed_id)
     seed_tower_ieta = seed_ebid.tower_ieta() # hcal tower behind seed crystal
     seed_tower_iphi = seed_ebid.tower_iphi()
-    h_d1=h_d2=h_d3=h_d4=0.0
-    for hit in evtdata.get("hcalhits"):
-        if hit.id().ieta()==seed_tower_ieta and hit.id().iphi()==seed_tower_iphi:
-            if (hit.id().depth() == 1): h_d1  += hit.energy()
-            elif (hit.id().depth() == 2): h_d2  += hit.energy()
-            elif (hit.id().depth() == 3): h_d3  += hit.energy()
-            elif (hit.id().depth() == 4): h_d4  += hit.energy()
-    if depth==1: return h_d1
-    elif depth==2: return h_d2
-    elif depth==3: return h_d3
-    elif depth==4: return h_d4
-    elif depth<1 or depth>4: return 0.
+    hcal_id = ROOT.HcalDetId(ROOT.HcalBarrel,seed_tower_ieta,seed_tower_iphi,depth)
+    hits = evtdata.get("hcalhits")
+    hit = hits.find(hcal_id)
+    if hit != hits.end():
+        return hit.energy()
+    else:
+        return 0.

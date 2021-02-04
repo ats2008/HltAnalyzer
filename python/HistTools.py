@@ -8,7 +8,7 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 
 class CutBin:
     def __init__(self,var_func,var_label,bins,do_abs=False):
-        self.var_func = var_func
+        self.var_func = CoreTools.UnaryFunc(var_func)
         self.var_label = var_label
         self.do_abs = do_abs
         self.bins = []
@@ -19,7 +19,7 @@ class CutBin:
                 self.bins.append([bin_low,bin_high])
        
     def get_binnr(self,obj):
-        var = CoreTools.call_func(obj,self.var_func)
+        var = self.var_func(obj)
         if self.do_abs:
             var = abs(var)
         for bin_nr,bin_range in enumerate(self.bins):
@@ -35,19 +35,19 @@ class CutBin:
 
 class VarHist:
     def __init__(self,var_func,name,title,nbins,var_min,var_max,cut_func=None,cut_labels=[]):
-        self.var_func = var_func
+        self.var_func = CoreTools.UnaryFunc(var_func)
         self.cut_func = cut_func
         self.hist = ROOT.TH1D(name,title,nbins,var_min,var_max)
         self.cut_labels = cut_labels
 
     def passcut(self,obj):
         if self.cut_func:
-            return self.cut_func(CoreTools.call_func(obj,self.var_func))
+            return self.cut_func(self.var_func(obj))
         else:
             return True
     
     def fill(self,obj,weight=1.):
-        self.hist.Fill(CoreTools.call_func(obj,self.var_func),weight)
+        self.hist.Fill(self.var_func(obj),weight)
 
 class HistBin:
     def __init__(self,name,bin_suffix,title,nbins,var_min,var_max,cut_labels=[]):
@@ -81,7 +81,7 @@ class VarHistBinned:
         self.hists = []
         self.basename = basename
         self.coll_suffix = coll_suffix
-        self.var_func = var_func
+        self.var_func = CoreTools.UnaryFunc(var_func)
         self.use_for_eff = use_for_eff
         self.init_hists(self.hists,self.cutbins,"",[],title,nbins,var_min,var_max)
         
@@ -94,7 +94,7 @@ class VarHistBinned:
                 hists[bin_nr].fill(var,weight)
             
     def fill(self,obj,weight=1.):
-        var = CoreTools.call_func(obj,self.var_func)
+        var = self.var_func(obj)
         self._fill(var,obj,self.hists,self.cutbins,weight)
 
     def _get_hist_data(self,hists,data):
@@ -200,10 +200,15 @@ def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=No
     hist_coll.add_hist('var("hltEgammaEcalPFClusterIsoUnseeded",0)',"ecalPFClusIso",";ecal pf clus isol [GeV];entries",100,0,20)
     hist_coll.add_hist('var("hltEgammaHcalPFClusterIsoUnseeded",0)',"hcalPFClusIso",";hcal pf clus isol [GeV];entries",100,0,20)
     hist_coll.add_hist('var("hltEgammaHGCalPFClusterIsoUnseeded",0)',"hgcalPFClusIso",";hgcal pf clus isol [GeV];entries",100,0,20)
-    hist_coll.add_hist('var("hltEgammaHoverEUnseeded",0)',"hForHOverE",";H for H/E [GeV];entries",100,0,20)
-    hist_coll.add_hist('var("hltEgammaPixelMatchVarsUnseeded_s2,0)',"pmS2","PM S2",100,0,100)
+    hist_coll.add_hist('var("hltEgammaHoverEUnseeded",0)',"hcalHForHOverE",";HCAL H for H/E [GeV];entries",100,0,20)
+    hist_coll.add_hist('var("hltEgammaHGCALIDVarsUnseeded_hForHOverE",0)',"hgcalHForHOverE",";HGCAL H for H/E [GeV];entries",100,0,20) 
+    hist_coll.add_hist('var("hltEgammaHGCALIDVarsUnseeded_sigma2uu",0)',"sigma2uu",";#sigma^{2}_{uu};entries",100,0,50)
+    hist_coll.add_hist('var("hltEgammaHGCALIDVarsUnseeded_sigma2vv",0)',"sigma2vv",";#sigma^{2}_{vv};entries",100,0,2)
+    hist_coll.add_hist('var("hltEgammaHGCALIDVarsUnseeded_sigma2ww",0)',"sigma2ww",";#sigma^{2}_{ww};entries",100,0,250)
+    
     
     if add_gsf:
+        hist_coll.add_hist('var("hltEgammaPixelMatchVarsUnseeded_s2,0)',"pmS2","PM S2",100,0,100)
         hist_coll.add_hist("gsfTracks().at(0).pt()","gsfTrkPt",";GsfTrk p_{T} [GeV];entries",20,0,100)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_Chi2")',"gsfChi2","Gsf Track #chi^{2}",100,0,100)
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_DetaSeed")',"deltaEtaInSeed","#Delta#eta_{in}^{seed}",100,0,0.02)
@@ -213,6 +218,8 @@ def create_histcoll(add_gsf=False,tag="",label="",desc="",norm_val=0.,cutbins=No
         hist_coll.add_hist('var("hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP")',"invEminusInvP","1/E - 1/p",100,-0.5,2)
         hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoUnseeded")',"trkIsoV0","trk V0 isol",100,0,20)
         hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoV6Unseeded")',"trkIsoV6","trk V6 isol",100,0,20)
+        hist_coll.add_hist('var("hltEgammaEleGsfTrackIsoV72Unseeded")',"trkIsoV72","trk V72 isol",100,0,20)
+        hist_coll.add_hist('var("hltEgammaEleL1TrkIsoUnseeded",0)',"trkIsoL1","L1 trk isol",100,0,20)
        
         
         

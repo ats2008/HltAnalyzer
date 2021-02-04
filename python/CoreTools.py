@@ -36,32 +36,66 @@ def convert_args(input_args):
     return output_args
         
 
-def call_func_nochain(obj,func_str):
-    #first check if it is just a property 
-    if func_str.replace("_","").isalnum(): #basically allows "_" but not other non alphanumerica charactor
-        return getattr(obj,func_str)
+class UnaryStrFunc:
+    def __init__(self,func_str):
+        res = self._convert(func_str)
+        self.name = res[0]
+        self.iscallable = res[1]
+        self.args = res[2]
 
-    #okay is it a function
-    re_res = re.search(r'([\w]+)(\(\)\Z)',func_str)
-    if re_res:
-        func_name = re_res.group(1)
-        return getattr(obj,func_name)()
+    def _convert(self,func_str):
+        """
+        this resolves a function string into name, callable, and args
+        note, it assumes there are no chained funcs, so no "."
+        """
+        if func_str.find(".")!=-1:
+            raise ValueError('function string " {} " must be a single function and therefore not contain "."'.format(func_str))
+        
+        #first check if it is just a property 
+        if func_str.replace("_","").isalnum(): #basically allows "_" but not other non alphanumerica charactor
+            return func_str,False,{}
 
-    #now check if its a function with arguments
-    re_res = re.search(r'([\w]+)(\(([\w",. ]+)\))',func_str)
-    if re_res:
-        func_name = re_res.group(1)
-        args = convert_args(re_res.group(3).split(","))
-        try:
-            return getattr(obj,func_name)(*args)
-        except ValueError as err: 
-            #much easier in python3, small hack here for 2.7
-            err.message = "for function '{}' with args {}\n {}".format(func_name,str(args),err.message)
-            err.args = (err.message,) + err.args[1:] 
-            raise err
+        #okay is it a function
+        re_res = re.search(r'([\w]+)(\(\)\Z)',func_str)
+        if re_res:
+            func_name = re_res.group(1)
+            return func_name,True,{}
 
-    raise RuntimeError("function string {} could not be resolved".format(func_str))
+        #now check if its a function with arguments
+        re_res = re.search(r'([\w]+)(\(([\w",. ]+)\))',func_str)
+        if re_res:
+            func_name = re_res.group(1)
+            args = convert_args(re_res.group(3).split(","))
+            try:
+                return func_name,True,args
+            except ValueError as err: 
+                #much easier in python3, small hack here for 2.7
+                err.message = "for function '{}' with args {}\n {}".format(func_name,str(args),err.message)
+                err.args = (err.message,) + err.args[1:] 
+                raise err
 
+        raise RuntimeError("function string {} could not be resolved".format(func_str))
+
+    def __call__(self,obj):
+        if not self.iscallable:
+            return getattr(obj,self.name)
+        else :
+            return getattr(obj,self.name)(*self.args)
+        
+
+class ChainedUnaryStrFunc:
+    """
+    this simple class defines a chain of functions/methods via a string
+    basically allows us to stop intepreting "obj.method1(args).member1" and similar
+    each time and just save the results
+    """
+    def __init__(self,func_str):
+        self.funcs = [UnaryStrFunc(s) for s in func_str.split(".")]
+            
+    def __call__(self,obj):
+        for func in self.funcs:
+            obj = func(obj)
+        return obj
         
 def call_func(obj,func_str):
     """
@@ -70,13 +104,11 @@ def call_func(obj,func_str):
     examples:
        var("hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)
        eventAuxiliary().run()
+
+    Now this is all handled by a class but this function is here for convenience
        
     """
-    sub_funcs = func_str.split(".")
-    res = obj
-    for sub_func in sub_funcs:
-        res = call_func_nochain(res,sub_func)
-    return res
+    return ChainedUnaryStrFunc(func_str)(obj)
 
 def get_filenames(input_filenames,prefix=""):
     output_filenames = []
@@ -101,6 +133,8 @@ def get_filenames_vec(input_filenames,prefix=""):
     return output_filenames
 
 
+
+
 class UnaryFunc:
     """
     this is a simple class which allows us to define a unary function 
@@ -120,6 +154,7 @@ class UnaryFunc:
         func_type = type(func)
         if func_type==str:
             self.func_type = UnaryFunc.FuncType.str_
+            self.func = ChainedUnaryStrFunc(func)
         elif func_type==functools.partial:
             self.func_type = UnaryFunc.FuncType.partial_
         else:
@@ -128,7 +163,7 @@ class UnaryFunc:
 
     def __call__(self,obj):
         if self.func_type==UnaryFunc.FuncType.str_:
-            return call_func(obj,self.func)
+            return self.func(obj)
         #here we work around the fact we need to put the object as the first
         #argument to the function when using partial
         elif self.func_type==UnaryFunc.FuncType.partial_: 

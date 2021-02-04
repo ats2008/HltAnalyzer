@@ -13,6 +13,7 @@ from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products,
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
+import Analysis.HLTAnalyserPy.IsolTools as IsolTools
 
 def match_tkeg_index(egidx,trkegs):
     for trkeg in trkegs:
@@ -50,6 +51,23 @@ def print_l1(evtdata,events,index):
     print("encap:")
     print_l1_region(evtdata,"_hgcal")
 
+def compare_l1_trk_iso(eg,evtdata):
+    l1isol = IsolTools.get_l1_iso(eg,evtdata)
+    l1isol_cmssw = eg.var("hltEgammaEleL1TrkIsoUnseeded",0)
+    if abs(l1isol-l1isol_cmssw)>0.01 and l1isol<=9999.:
+        print("l1 iso mis match {} {} {} : {} vs {}".format(eg.et(),eg.eta(),eg.phi(),l1isol,l1isol_cmssw))
+        print("event: {} {} {}".format(events.eventAuxiliary().run(),events.eventAuxiliary().luminosityBlock(),events.eventAuxiliary().event()))
+
+        for gsftrk in eg.gsfTracks():
+            print("  gsf trk {} {} {} {}".format(gsftrk.pt(),gsftrk.eta(),gsftrk.phi(),gsftrk.vz()))
+        l1trks = evtdata.get("l1trks")
+        for l1trk_extra in l1trks:
+            l1trk = l1trk_extra.ttTrk()
+            print("  l1trk {} {} {} {}".format(l1trk.momentum().perp(),l1trk.eta(),l1trk.phi(),l1trk.z0()))
+        
+        
+
+
 if __name__ == "__main__":
     
     CoreTools.load_fwlitelibs()
@@ -58,28 +76,24 @@ if __name__ == "__main__":
     parser.add_argument('in_filename',nargs="+",help='input filename')
     parser.add_argument('--prefix','-p',default='file:',help='file prefix')
     parser.add_argument('--out','-o',default="output.root",help='output filename')
+    parser.add_argument('--report','-r',default=100,type=int,help='report interval')
     args = parser.parse_args()
-    add_product(phaseII_products,"countEcalRecHitsEBThres0GeV","int","hltEgammaHLTExtra:countEcalRecHitsEcalRecHitsEBThres0GeV")
-    add_product(phaseII_products,"countEcalRecHitsEBThres1GeV","int","hltEgammaHLTExtra:countEcalRecHitsEcalRecHitsEBThres1GeV")
-    add_product(phaseII_products,"ecalHitsTest","edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> >","hltEcalRecHit:EcalRecHitsEB")
-    add_product(phaseII_products,"hgcalTest","edm::SortedCollection<HGCRecHit,edm::StrictWeakOrdering<HGCRecHit> >","HGCalRecHit:HGCHEBRecHits")
-    add_product(phaseII_products,"countHGCal1GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCHEBRecHitsThres1GeV")
-    add_product(phaseII_products,"countHGCal0GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCHEBRecHitsThres0GeV")
-    
-    
+
     evtdata = EvtData(phaseII_products,verbose=True)
     
     in_filenames_with_prefix = ['{}{}'.format(args.prefix,x) for x in args.in_filename]
     events = Events(in_filenames_with_prefix)
     
+    nr_events = events.size()
     print("number of events",events.size())
 
+    for event_nr,event in enumerate(events):
+        if event_nr%args.report==0:
+            print("processing event {} / {}".format(event_nr,nr_events))
+        evtdata.get_handles(event)
+        
+        egobjs = evtdata.get("egtrigobjs")
+        for eg in egobjs: 
+            compare_l1_trk_iso(eg,evtdata)
     
-#    with open("weights_test_qcd.json") as f:
-#       import json
-#       weights = json.load(f)
-
-#    weighter = QCDWeightCalc(weights["v2"]["qcd"])
-#    events.to(3)
-#    evtdata.get_handles(events)
-#    weighter.weight(evtdata)
+    
