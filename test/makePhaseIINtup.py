@@ -5,7 +5,7 @@ import ROOT
 from functools import partial
 import math
 
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles, phaseII_products
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles, phaseII_products,add_product
 from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
@@ -67,29 +67,44 @@ class BDTOutputTransformer:
     def transform(self,raw_val):
         return self.offset + self.scale * math.sin(raw_val)
 
-def apply_hltreg(obj,evtdata,mean_forest_hgcal):
+def get_sc_hgcal_features(obj_sc,evtdata):
+    for scnr,sc in enumerate(evtdata.get("sc_hgcal_corr")):
+        if sc.seed().seed().rawId()==obj_sc.seed().seed().rawId():
+            if abs(sc.rawEnergy()-obj_sc.rawEnergy())>0.1:
+               print("error sc with {} and E {} matches to sc with E {}",sc.seed().seed().rawId(),sc.rawEnergy,obj_sc.rawEnergy())
+            return evtdata.get("sc_hgcal_corr_features")[scnr]
+    return None
+
+def get_reg_energy(obj,evtdata,mean_forest_hgcal):
     if mean_forest_hgcal and obj.superCluster().seed().seed().det()==ROOT.DetId.HGCalEE:
-        data = ROOT.std.vector(float)(7,0.)
-        sc = obj.superCluster()
-        counts = ["nrHitsEB1GeV","nrHGCalEE1GeV","nrHGCalHEB1GeV","nrHGCalHEF1GeV"]
-        for count in counts:
-            data[0] += evtdata.get(count)[0]
-        data[1] = sc.eta()
-        data[2] = sc.phiWidth()
-        data[3] = obj.var("hltEgammaHGCALIDVarsUnseeded_rVar")
-        data[4] = sc.clusters().size() - 1 
-        data[5] = cal_cluster_maxdr(obj)
-        data[6] = sc.rawEnergy()
+        data = get_sc_hgcal_features(obj.superCluster(),evtdata)
+            
+        #data = ROOT.std.vector(float)(7,0.)
+        #sc = obj.superCluster()
+        #counts = ["nrHitsEB1GeV","nrHGCalEE1GeV","nrHGCalHEB1GeV","nrHGCalHEF1GeV"]
+        #for count in counts:
+        #    data[0] += evtdata.get(count)[0]
+        #data[1] = sc.eta()
+        #data[2] = sc.phiWidth()
+        #data[3] = obj.var("hltEgammaHGCALIDVarsUnseeded_rVar")
+        #data[4] = sc.clusters().size() - 1 
+        #data[5] = cal_cluster_maxdr(obj)
+        #data[6] = sc.rawEnergy()
         
         out_trans = BDTOutputTransformer(0.2,2)
         mean_raw = mean_forest_hgcal.GetResponse(data.data())
         mean = out_trans.transform(mean_raw)
-        obj.setEnergyPtEtaPhi(mean*obj.energy(),mean*obj.pt(),obj.eta(),obj.phi())
-    elif obj.superCluster().seed().seed().det()==ROOT.DetId.Ecal:
+        return mean*obj.superCluster().rawEnergy()
+    else:
         mean = 1.023
-        obj.setEnergyPtEtaPhi(mean*obj.energy(),mean*obj.pt(),obj.eta(),obj.phi())
+        return mean*obj.superCluster().rawEnergy()
 
-        
+def set_corr_energy_eb(obj):
+    if obj.superCluster().seed().seed().det()==ROOT.DetId.Ecal:  
+        mean = 1.023
+        corr_fact = mean*obj.superCluster().rawEnergy()/obj.energy()
+        obj.setEnergyPtEtaPhi(corr_fact*obj.energy(),corr_fact*obj.pt(),obj.eta(),obj.phi())
+               
 
 def fix_hgcal_hforhe(obj,evtdata):
     layerclus = evtdata.get("hglayerclus")
@@ -117,6 +132,11 @@ def main():
     parser.add_argument('--report','-r',default=10,type=int,help="report every N events")
     parser.add_argument('--reg_hgcal',default=None,help='filename of file with hgcal regression')
     args = parser.parse_args()
+    
+    #temp for regression
+    add_product(phaseII_products,"sc_hgcal_corr","vector<reco::SuperCluster>","corrHGCALSuperClusHLT")
+    add_product(phaseII_products,"sc_hgcal_corr_features","vector<vector<float>>","corrHGCALSuperClus:features")
+    
     
     evtdata = EvtData(phaseII_products,verbose=True)
     weights = EvtWeights(args.weights) if args.weights else None
@@ -157,10 +177,11 @@ def main():
         'hgcaliso_layerclus/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso_layerclus,evtdata,min_dr_had=0.0,min_dr_em=0.02,max_dr=0.2,min_energy_had=0.07,min_energy_em=0.02)),
         'r9Full/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=False)),
         'r9Frac/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=True)),
-        'clusterMaxDR/F' : cal_cluster_maxdr
+        'clusterMaxDR/F' : cal_cluster_maxdr,
+        'energyCorrOffline/F' : CoreTools.UnaryFunc(partial(get_reg_energy,evtdata,mean_forest_hgcal))
     })
     eghlt_tree.add_eg_update_funcs([ 
-        CoreTools.UnaryFunc(partial(apply_hltreg,evtdata,mean_forest_hgcal))
+        CoreTools.UnaryFunc(set_corr_energy_eb)
       #  CoreTools.UnaryFunc(partial(fix_hgcal_hforhe,evtdata))
     ])
     
