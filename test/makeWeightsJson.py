@@ -60,17 +60,11 @@ def get_qcd_filt_effs(min_pt,max_pt,com_energy):
             "em_filt_eff": 0.0593,
             "em_mu_filt_eff": 0.0059
         },
-        "15to20": {
+        "15to30": {
             "mu_em_filt_eff": 0.0012,
             "em_mu_filt_eff": 0.0015,
             "em_filt_eff" : 0.001569,
             "mu_filt_eff" : 0.00328
-        },
-        "20to30": {
-            "mu_filt_eff": 0.0043,
-            "mu_em_filt_eff": 0.01,
-            "em_filt_eff": 0.0122,
-            "em_mu_filt_eff": 0.0031
         },
         "120to170": {
             "mu_filt_eff": 0.0292,

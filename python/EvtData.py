@@ -10,6 +10,14 @@ class HandleData(Handle):
         self.label = str(label)
     def get(self,event):
         event.getByLabel(self.label,self)
+    def get_label(self,split=True):
+        if split:
+            parts = self.label.split(":")
+            while len(parts)<3:
+                parts.append("")
+            return parts[0],parts[1],parts[2]
+        else:
+            return str(self.label)
         
 class EvtHandles:
     def __init__(self,products=[],verbose=False):
@@ -72,6 +80,10 @@ class EvtData:
              return handle.product()[0]       
          except RuntimeError:
              return None
+
+    def get_label(self,name,split=False): 
+        return getattr(self.handles,name).get_label(split=split)
+        
 
 def get_objs(evtdata,events,objname,indx):
     """

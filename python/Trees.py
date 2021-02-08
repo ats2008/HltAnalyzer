@@ -237,6 +237,7 @@ class HLTRateTree:
         self.hard_pt_hat = array("f",[0])
         self.nr_pt_hats = array("i",[0])
         self.pt_hats = ROOT.std.vector("float")()
+        self.nr_expect_pu = array("f",[0])
         self.weight = array("f",[0])
         self.filtweight = array("f",[0])
         self.pass_em = array("i",[0])
@@ -247,6 +248,7 @@ class HLTRateTree:
         self.tree.Branch("hardPtHat",self.hard_pt_hat,"hardPtHat/F")
         self.tree.Branch("nrPtHats",self.nr_pt_hats,"nrPtHats/I")
         self.tree.Branch("ptHats",self.pt_hats)
+        self.tree.Branch("nrExptPU",self.nr_expect_pu,"nrExptPU/F")
         self.tree.Branch("weight",self.weight,"weight/F")
         self.tree.Branch("filtWeight",self.filtweight,"filtWeight/F")
         self.tree.Branch("passEM",self.pass_em,"passEM/I")
@@ -273,7 +275,7 @@ class HLTRateTree:
         pt_hats = [x for x in pu_sum_intime[0].getPU_pT_hats()]
         pt_hats.append(geninfo.qScale())
         pt_hats.sort(reverse=True)
-        
+        self.nr_expect_pu[0] = pu_sum_intime[0].getTrueNumInteractions()
         self.gen_filters.fill(evtdata)
 
         self.hard_pt_hat[0] = geninfo.qScale()
