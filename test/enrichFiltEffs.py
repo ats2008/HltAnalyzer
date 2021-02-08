@@ -9,7 +9,7 @@ import re
 import math
 from array import array
 from DataFormats.FWLite import Events, Handle
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products,add_product,QCDWeightCalc,EvtWeights,EvtWeightsV2
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products,add_product
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.TrigTools as TrigTools
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     add_product(products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
     add_product(products,"geninfo","GenEventInfoProduct","generator")
     add_product(products,"pu_weight","double","stitchingWeight")
-    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::PUSkim")
+    add_product(products,"trig_res","edm::TriggerResults","TriggerResults::RateSkim")
 
     evtdata = EvtData(products,verbose=args.verbose)
     
