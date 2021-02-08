@@ -65,7 +65,7 @@ if __name__ == "__main__":
     add_product(phaseII_products,"hgcalTest","edm::SortedCollection<HGCRecHit,edm::StrictWeakOrdering<HGCRecHit> >","HGCalRecHit:HGCHEBRecHits")
     add_product(phaseII_products,"countHGCal1GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCHEBRecHitsThres1GeV")
     add_product(phaseII_products,"countHGCal0GeV","int","hltEgammaHLTPhase2Extra:countHgcalRecHitsHGCHEBRecHitsThres0GeV")
-    
+    add_product(phaseII_products,"trig_sum","trigger::TriggerEvent","hltTriggerSummaryAOD::HLTX")
     
     evtdata = EvtData(phaseII_products,verbose=True)
     

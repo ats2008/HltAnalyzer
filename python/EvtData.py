@@ -17,7 +17,7 @@ class HandleData(Handle):
                 parts.append("")
             return parts[0],parts[1],parts[2]
         else:
-            return str(label)
+            return str(self.label)
         
 class EvtHandles:
     def __init__(self,products=[],verbose=False):

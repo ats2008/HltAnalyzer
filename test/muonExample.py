@@ -37,6 +37,7 @@ if __name__ == "__main__":
     products=[]
     add_product(products,"muons_nofilt_no_vtx","std::vector<reco::RecoChargedCandidate>","hltL3NoFiltersNoVtxMuonCandidates")
     add_product(products,"beamspot","reco::BeamSpot","hltOnlineBeamSpot")
+    add_product(products,"trig_sum","std::vector< trigger::TriggerEvent  >","hltTriggerSummaryAOD::HLTX")
     evtdata = EvtData(products,verbose=True)
     
     in_filenames_with_prefix = ['{}{}'.format(args.prefix,x) for x in args.in_filename]
