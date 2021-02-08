@@ -32,6 +32,17 @@ def sep_trig_ver(name):
     else:
         return str(name),None
 
+def get_objs_passing_filter_aod(obj_eta,obj_phi,evtdata,filter_name):
+    trig_objs = evtdata.get_label("trig_objs_aod",split=True)
+    hlt_process = evtdata.handles.trig_objs_aod.get_label_parts()[2]
+    filt_indx = trig_objs.filterIndex(ROOT.edm.InputTag(filter_name,"",hlt_process))
+    passing_objs = []
+    if filt_indx < trig_objs.sizeFilters():
+        keys = trig_objs.filterKeys(filterIndex)
+        passing_objs = [trig_objs[key] for key in keys]
+    return passing_objs
+        
+                                      
 class TrigResults:
     def __init__(self,trigs):
         self.trig_psetid = None
