@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <boost/property_tree/json_parser.hpp>
 #include <stdexcept>
+#include <iostream>
 
 QCDWeightCalc::PtBinnedSample::PtBinnedSample(const boost::property_tree::ptree& sampleInfo)
 {
