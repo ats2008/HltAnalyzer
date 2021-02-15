@@ -43,7 +43,7 @@ class EgHLTTree:
         self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalEE1GeV/F",UnaryFunc('get_fundtype("nrHGCalEE1GeV")')))
         self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalHEB1GeV/F",UnaryFunc('get_fundtype("nrHGCalHEB1GeV")')))
         self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalHEF1GeV/F",UnaryFunc('get_fundtype("nrHGCalHEF1GeV")')))
-        self.evtdatavars.append(TreeVar(self.tree,"rho/F",UnaryFunc('get_fundtype("rho")')))
+        self.evtdatavars.append(TreeVar(self.tree,"rho/F",UnaryFunc('get_fundtype("rho",0)')))
             
             
         max_pthats = 400
@@ -51,7 +51,7 @@ class EgHLTTree:
         self.pthats = TreeVar(self.tree,"ptHats/F",None,maxsize=max_pthats,sizevar="nrPtHats")
             
         egobjnr_name = "nrEgs"
-        max_egs = 100    
+        max_egs = 200    
         self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",UnaryFunc(partial(len)))
        
         vars_ = {

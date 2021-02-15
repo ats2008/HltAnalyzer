@@ -47,7 +47,14 @@ class TreeVar:
         
     def fill(self,obj,objnr=0):
         val = self.func(obj) if self.func else obj
-        self.data[objnr] = val 
+        try:
+            self.data[objnr] = val 
+        except (IndexError,TypeError) as err:
+            #much easier in python3, small hack here for 2.7
+            err.message = "for var {} with objnr {} {} type {} error: '{}'".format(self.varname,objnr,len(self.data),self.vartype,err.message)
+            err.args = (err.message,) + err.args[1:] 
+            raise err
+
 
     def clear(self):
         for n,x in enumerate(self.data):
