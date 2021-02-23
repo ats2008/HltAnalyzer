@@ -283,7 +283,7 @@ class HLTRateTree:
         for pt_hat in pt_hats:
             self.pt_hats.push_back(pt_hat)
         self.nr_pt_hats[0] = self.pt_hats.size()
-        self.weight[0] = self.weight_calc.weight(evtdata)
+        self.weight[0] = self.weight_calc.weight(evtdata,nr_expt_pu=pu_sum_intime[0].getTrueNumInteractions())
         self.filtweight[0] = self.weight_calc.filtweight(evtdata)
         self.pass_em[0] = self.gen_filters.result("Gen_QCDEmEnrichingNoBCToEFilter")
         self.pass_mu[0] = self.gen_filters.result("Gen_QCDMuGenFilter")
