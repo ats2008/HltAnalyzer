@@ -23,8 +23,8 @@ def get_xsec(mcdata):
         if mcdata.proc_type == MCSample.ProcType.MB: return 80.0E9
         if mcdata.proc_type == MCSample.ProcType.QCD: return get_qcd_xsec(mcdata.min_pthat,mcdata.max_pthat,mcdata.com_energy)
     elif mcdata.com_energy==13000.:
-        if mcdata.proc_type == MCSample.ProcType.DY: return 5795.0
-        if mcdata.proc_type == MCSample.ProcType.WJets: return 56990.0
+        if mcdata.proc_type == MCSample.ProcType.DY: return 6077.22
+        if mcdata.proc_type == MCSample.ProcType.WJets: return 20508.9*3
         if mcdata.proc_type == MCSample.ProcType.MB: return 80.0E9
         if mcdata.proc_type == MCSample.ProcType.QCD: return get_qcd_xsec(mcdata.min_pthat,mcdata.max_pthat,mcdata.com_energy)
     else:
