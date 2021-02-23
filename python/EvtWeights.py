@@ -152,11 +152,13 @@ class EvtWeights:
             
         self.mcsample_getter = MCSampleGetter()
         self.lumi = bx_freq * nr_expt_pu / mb_xsec
+        self.bx_freq = bx_freq
+        self.mb_xsec = mb_xsec
         if self.data:
             self.qcd_weights = QCDWeightCalc(self.data['v2']['qcd'],bx_freq)
             
     
-    def weight(self,evtdata,weight_type=WeightType.V2):     
+    def weight(self,evtdata,weight_type=WeightType.V2,nr_expt_pu=None):     
         mcsample = self.mcsample_getter.get(evtdata)        
         if mcsample.proc_type == MCSample.ProcType.QCD or mcsample.proc_type == MCSample.ProcType.MB:
             disable_enriched = weight_type==EvtWeights.WeightType.V2NoEnrich
@@ -166,7 +168,9 @@ class EvtWeights:
             if mcsample.proc_type == MCSample.ProcType.DY: key = "dy"
             if mcsample.proc_type == MCSample.ProcType.WJets: key = "wjets"
             try:
-                return self.data['v2'][key][0]['xsec']/self.data['v2'][key][0]['nrtot']*self.lumi
+                lumi  = self.lumi if nr_expt_pu==None else self.bx_freq*nr_expt_pu/self.mb_xsec
+                    
+                return self.data['v2'][key][0]['xsec']/self.data['v2'][key][0]['nrtot']*lumi
             except KeyError:
                 return 1.
 
