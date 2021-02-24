@@ -8,7 +8,7 @@ import ROOT
 import json
 import re
 from DataFormats.FWLite import Events, Handle
-from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,std_products, add_product,get_objs,QCDWeightCalc
+from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,std_products, add_product,get_objs
 
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     print("number of events",events.size())
 
     
-    for eventnr,event in enumerate(events):
-        evtdata.get_handles(events)
-        geninfo = evtdata.get("geninfo")
-        print(geninfo.signalProcessID(),str(geninfo.binningValues()),str(geninfo.DJRValues()))
+   # for eventnr,event in enumerate(events):
+   #     evtdata.get_handles(events)
+   #     geninfo = evtdata.get("geninfo")
+    #    print(geninfo.signalProcessID(),str(geninfo.binningValues()),str(geninfo.DJRValues()))
