@@ -61,7 +61,9 @@ if __name__ == "__main__":
             print("{} / {} time: {:.1f}s, est finish {}".format(eventnr,events.size(),elapsed_time,est_finish))
         
         evtdata.get_handles(event)
-        weight = weight_calc.weight(evtdata)
+        pusum_intime = [x for x in evtdata.get("pu_sum") if x.getBunchCrossing()==0]
+        
+        weight = weight_calc.weight(evtdata, nr_expt_pu=pusum_intime[0].getTrueNumInteractions())
 #        weight = 1.0
         rates.fill(evtdata,weight)
         rate_tree.fill(evtdata)
