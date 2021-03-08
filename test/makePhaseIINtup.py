@@ -16,6 +16,20 @@ import Analysis.HLTAnalyserPy.IsolTools as IsolTools
 import Analysis.HLTAnalyserPy.PixelMatchTools as PixelMatchTools
 from Analysis.HLTAnalyserPy.Trees import EgHLTTree
 
+def get_offline_energy(obj,evtdata):
+    obj_sc = obj.superCluster()
+    if obj_sc.seed().seed().det()==ROOT.DetId.Ecal:
+        return obj_sc.energy()
+        
+    offline_scs = evtdata.get("sc_hgcal_corr")
+    for sc in offline_scs:
+        if sc.seed().seed().rawId()==obj_sc.seed().seed().rawId():
+            if abs(sc.rawEnergy()-obj_sc.rawEnergy())>0.1:
+                print("error sc with {} and E {} matches to sc with E {}",sc.seed().seed().rawId(),sc.rawEnergy,obj_sc.rawEnergy())
+            return sc.energy()
+    return 0.
+    
+
 def cal_cluster_maxdr(obj):
     max_dr2 = 0.
     sc = obj.superCluster()
@@ -64,8 +78,10 @@ class BDTOutputTransformer:
     def __init__(self,limit_low,limit_high):
         self.offset = limit_low + 0.5 * (limit_high - limit_low)
         self.scale = 0.5 * (limit_high - limit_low)
+ 
     def transform(self,raw_val):
         return self.offset + self.scale * math.sin(raw_val)
+
 
 def get_sc_hgcal_features(obj_sc,evtdata):
     for scnr,sc in enumerate(evtdata.get("sc_hgcal_corr")):
@@ -94,10 +110,34 @@ def get_reg_energy(obj,evtdata,mean_forest_hgcal):
         out_trans = BDTOutputTransformer(0.2,2)
         mean_raw = mean_forest_hgcal.GetResponse(data.data())
         mean = out_trans.transform(mean_raw)
+        #print("sc {} {} {} {} {}".format(obj.superCluster().rawEnergy(),obj.superCluster().eta(),obj.superCluster().phi(),mean_raw,mean))
+        #for nr,feature in enumerate(data):
+        #    print("{} {}".format(nr,feature))
         return mean*obj.superCluster().rawEnergy()
     else:
         mean = 1.023
         return mean*obj.superCluster().rawEnergy()
+
+def get_reg_raw(obj,evtdata,mean_forest_hgcal):
+    if mean_forest_hgcal and obj.superCluster().seed().seed().det()==ROOT.DetId.HGCalEE:
+        data = get_sc_hgcal_features(obj.superCluster(),evtdata)
+            
+        #data = ROOT.std.vector(float)(7,0.)
+        #sc = obj.superCluster()
+        #counts = ["nrHitsEB1GeV","nrHGCalEE1GeV","nrHGCalHEB1GeV","nrHGCalHEF1GeV"]
+        #for count in counts:
+        #    data[0] += evtdata.get(count)[0]
+        #data[1] = sc.eta()
+        #data[2] = sc.phiWidth()
+        #data[3] = obj.var("hltEgammaHGCALIDVarsUnseeded_rVar")
+        #data[4] = sc.clusters().size() - 1 
+        #data[5] = cal_cluster_maxdr(obj)
+        #data[6] = sc.rawEnergy()
+        
+       
+        return mean_forest_hgcal.GetResponse(data.data())
+    else:
+        return -999.
 
 def set_corr_energy_eb(obj):
     if obj.superCluster().seed().seed().det()==ROOT.DetId.Ecal:  
@@ -134,7 +174,7 @@ def main():
     args = parser.parse_args()
     
     #temp for regression
-    add_product(phaseII_products,"sc_hgcal_corr","vector<reco::SuperCluster>","corrHGCALSuperClusHLT")
+    add_product(phaseII_products,"sc_hgcal_corr","vector<reco::SuperCluster>","corrHGCALSuperClus")
     add_product(phaseII_products,"sc_hgcal_corr_features","vector<vector<float>>","corrHGCALSuperClus:features")
     
     
@@ -143,7 +183,8 @@ def main():
     mean_forest_hgcal = None
     if args.reg_hgcal:
         reg_file =  ROOT.TFile.Open(args.reg_hgcal,"READ")
-        mean_forest_hgcal = reg_file.EECorrection
+       # mean_forest_hgcal = reg_file.EECorrection
+        mean_forest_hgcal = reg_file.superclus_hgcal_mean_offline
     
 
     out_file = ROOT.TFile(args.out_filename,"RECREATE")
@@ -178,7 +219,9 @@ def main():
         'r9Full/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=False)),
         'r9Frac/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=True)),
         'clusterMaxDR/F' : cal_cluster_maxdr,
-        'energyCorrOffline/F' : CoreTools.UnaryFunc(partial(get_reg_energy,evtdata,mean_forest_hgcal))
+        #'energyCorrOfflineOld/F' : CoreTools.UnaryFunc(partial(get_reg_energy,evtdata,mean_forest_hgcal)),
+        #'regRaw/F' : CoreTools.UnaryFunc(partial(get_reg_raw,evtdata,mean_forest_hgcal)),
+        'energyCorrOffline/F' : CoreTools.UnaryFunc(partial(get_offline_energy,evtdata))
     })
     eghlt_tree.add_eg_update_funcs([ 
         CoreTools.UnaryFunc(set_corr_energy_eb)

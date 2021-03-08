@@ -43,7 +43,7 @@ class EgHLTTree:
         self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalEE1GeV/F",UnaryFunc('get_fundtype("nrHGCalEE1GeV")')))
         self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalHEB1GeV/F",UnaryFunc('get_fundtype("nrHGCalHEB1GeV")')))
         self.evtdatavars.append(TreeVar(self.tree,"nrHitsHGCalHEF1GeV/F",UnaryFunc('get_fundtype("nrHGCalHEF1GeV")')))
-        self.evtdatavars.append(TreeVar(self.tree,"rho/F",UnaryFunc('get_fundtype("rho")')))
+        self.evtdatavars.append(TreeVar(self.tree,"rho/F",UnaryFunc('get_fundtype("rho",0)')))
             
             
         max_pthats = 400
@@ -51,7 +51,7 @@ class EgHLTTree:
         self.pthats = TreeVar(self.tree,"ptHats/F",None,maxsize=max_pthats,sizevar="nrPtHats")
             
         egobjnr_name = "nrEgs"
-        max_egs = 100    
+        max_egs = 200    
         self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",UnaryFunc(partial(len)))
        
         vars_ = {
@@ -283,7 +283,7 @@ class HLTRateTree:
         for pt_hat in pt_hats:
             self.pt_hats.push_back(pt_hat)
         self.nr_pt_hats[0] = self.pt_hats.size()
-        self.weight[0] = self.weight_calc.weight(evtdata)
+        self.weight[0] = self.weight_calc.weight(evtdata,nr_expt_pu=pu_sum_intime[0].getTrueNumInteractions())
         self.filtweight[0] = self.weight_calc.filtweight(evtdata)
         self.pass_em[0] = self.gen_filters.result("Gen_QCDEmEnrichingNoBCToEFilter")
         self.pass_mu[0] = self.gen_filters.result("Gen_QCDMuGenFilter")

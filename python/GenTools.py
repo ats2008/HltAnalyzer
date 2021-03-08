@@ -164,7 +164,6 @@ double getCOMEnergy(edm::ParameterSet& pset){
         proc_hist.getConfigurationForProcess("SIM",cfg) 
         cfg_pset = evtdata.event.object().parameterSet(cfg.parameterSetID())  
         com_energy = ROOT.getCOMEnergy(cfg_pset)
-        
         if sig_id >=101 and sig_id<=106:
             self.last_type = MCSample(MCSample.ProcType.MB,com_energy=com_energy)
         elif sig_id>=111 and sig_id<=124:
@@ -201,8 +200,13 @@ std::vector<std::string> getGenProcParam(edm::ParameterSet& pset){
         elif sig_id==221:
             self.last_type = MCSample(MCSample.ProcType.DY,com_energy=com_energy)
         elif sig_id==9999:
-            #not this just means its an external generator but our only one is WJets 
-            self.last_type = MCSample(MCSample.ProcType.WJets,com_energy=com_energy)
+            #not this just means its an external generator but now we have to figure out DY and WJets from the filename name for now
+            if self.last_file.find("DYJets")!=-1:
+                self.last_type = MCSample(MCSample.ProcType.DY,com_energy=com_energy)
+            elif self.last_file.find("WJets")!=-1:
+                self.last_type = MCSample(MCSample.ProcType.WJets,com_energy=com_energy)
+            else:
+                self.last_type = MCSample(MCSample.ProcType.Unknown)
         else:
             self.last_type = MCSample(MCSample.ProcType.Unknown)
         

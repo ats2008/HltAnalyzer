@@ -70,14 +70,17 @@ class EvtData:
         except RuntimeError:
             return None
            
-    def get_fundtype(self,name):
+    def get_fundtype(self,name,default=None):
          """
          hack as I needed this working right now(tm) and this was path of least resistance
          """
          handle = self.get_handle(name)
          
          try:
-             return handle.product()[0]       
+            if handle.isValid():
+                return handle.product()[0]       
+            else:
+                return default
          except RuntimeError:
              return None
 

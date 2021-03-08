@@ -20,9 +20,9 @@ def pass_ele_isol(l1obj):
 
 def pass_pho_isol(l1obj):
     if abs(l1obj.eta())<1.479:
-        return l1obj.trkIsol()<0.28
-    else:
         return l1obj.trkIsol()<0.35
+    else:
+        return l1obj.trkIsol()<0.28
 
 def pass_eg_isol(l1obj):
     if type(l1obj).__name__=='TkElectron':
