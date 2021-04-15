@@ -22,6 +22,7 @@ def make_val_hists(in_filenames,out_name,label):
 
     events = Events(in_filenames)
     nr_events = events.size()
+
     out_file = ROOT.TFile(out_name,"RECREATE")
 
     weight = 1.
@@ -107,4 +108,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     in_filenames = CoreTools.get_filenames(args.in_names,args.prefix)
+    
+    if os.path.isdir(args.out_name):
+        if args.in_names.find(".")!=-1:
+            args.out_name = os.path.join(args.out_name,".".join(in_names[0].split(".")[:-1])+"_valhists.root")
+        else:
+            args.out_name = os.path.join(args.out_name,in_names[0]+"_valhists.root")
+        print("auto renaming output to ".format(args.out_name))
+
     make_val_hists(in_filenames,args.out_name,args.label)
