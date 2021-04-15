@@ -109,16 +109,18 @@ def add_product(prods,name,type_,tag):
     prods.append({'name' : name, 'type' : type_, 'tag' : tag})
 
 std_products=[]
-add_product(std_products,"egtrigobjs","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtra")
-add_product(std_products,"egtrigobjs","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtraUnseeded")
+add_product(std_products,"egtrigobjs","std::vector<trigger::EgammaObject>","hltEgammaHLTExtra")
+add_product(std_products,"egtrigobjs_unseeded","std::vector<trigger::EgammaObject>","hltEgammaHLTExtraUnseeded")
 add_product(std_products,"genparts","std::vector<reco::GenParticle>","genParticles")
 add_product(std_products,"geninfo","GenEventInfoProduct","generator")
 add_product(std_products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
 
 phaseII_products = []
-add_product(phaseII_products,"egtrigobjs","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtra")
+add_product(phaseII_products,"egtrigobjs","std::vector<trigger::EgammaObject>","hltEgammaHLTExtra")
+add_product(phaseII_products,"egtrigobjs_l1seed","std::vector<trigger::EgammaObject>","hltEgammaHLTExtra:L1Seeded")
+
 add_product(phaseII_products,"genparts","std::vector<reco::GenParticle>","genParticles")
-add_product(phaseII_products,"l1trks","std::vector<TTTrackExtra<edm::Ref<edm::DetSetVector<Phase2TrackerDigi>,Phase2TrackerDigi,edm::refhelper::FindForDetSetVector<Phase2TrackerDigi> > > >","hltEgammaHLTPhase2Extra")
+add_product(phaseII_products,"l1trks","std::vector<TTTrackTruthPair<edm::Ref<edm::DetSetVector<Phase2TrackerDigi>,Phase2TrackerDigi,edm::refhelper::FindForDetSetVector<Phase2TrackerDigi> > > >","hltEgammaHLTPhase2Extra")
 add_product(phaseII_products,"trkpart","std::vector<TrackingParticle>","hltEgammaHLTPhase2Extra")
 add_product(phaseII_products,"hcalhits","edm::SortedCollection<HBHERecHit,edm::StrictWeakOrdering<HBHERecHit> >","hltEgammaHLTExtra")
 add_product(phaseII_products,"ebhits","edm::SortedCollection<EcalRecHit,edm::StrictWeakOrdering<EcalRecHit> >","hltEgammaHLTExtra:EcalRecHitsEB")
