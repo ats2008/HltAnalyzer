@@ -26,8 +26,22 @@ if __name__ == "__main__":
     pu_min = 10
     pu_max = 60
 
-    paths_to_measure = ["HLT_Ele32_WPTight_Gsf_v"]
-
+    paths_to_measure = ["HLT_Mu50_v",
+                        "HLT_IsoMu24_v",
+                        "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v",
+                        "HLT_Mu37_TkMu27_v",
+                        "HLT_TripleMu_10_5_5_DZ_v",
+                        "HLT_Ele32_WPTight_Gsf_v",
+                        "HLT_Photon200_v",
+                        "HLT_Photon100EB_TightID_TightIso_v",
+                        "HLT_Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass95_v",
+                        "HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg_v",
+                        "HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg_v",
+                        "HLT_PFJet500_v",
+                        "HLT_PFHT1050_v",
+                        "HLT_QuadPFJet105_88_76_15_DoublePFBTagDeepCSV_1p3_7p7_VBF1_v",
+                        "HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v",
+                    ]
     ROOT.ROOT.EnableImplicitMT()
 
     filenames = CoreTools.get_filenames_vec(args.in_filenames)
