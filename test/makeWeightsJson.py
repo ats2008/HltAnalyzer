@@ -274,11 +274,12 @@ def fill_weights_dict_v2(weights_dict,nrevents,mcdata):
     else:
         key = ""
         if mcdata.proc_type == MCSample.ProcType.DY: key = "dy"
-        if mcdata.proc_type == MCSample.ProcType.WJets: key = "wjets"
+        elif mcdata.proc_type == MCSample.ProcType.WJets: key = "wjets"
         
-        if not weights_dict[key]:
-            weights_dict[key].append({"nrtot": 0, "xsec": get_xsec(mcdata)})
-        weights_dict[key][0]["nrtot"]+=nrevents
+        if key in weights_dict:
+            if not weights_dict[key]:
+                weights_dict[key].append({"nrtot": 0, "xsec": get_xsec(mcdata)})
+            weights_dict[key][0]["nrtot"]+=nrevents
         
     return weights_dict
         
@@ -302,17 +303,19 @@ if __name__ == "__main__":
     mc_type_getter = MCSampleGetter()
     for in_filename in in_filenames:        
         events = Events(in_filename)          
-        if events.size()==0: 
-            print("error, empty event",in_filename)
-            continue
-        events.to(0)
-        evtdata.get_handles(events)
-        mcinfo = mc_type_getter.get(evtdata)
+        if events.size()==0:      
+            print("file {}".format(in_filename),)
+            mcinfo = mc_type_getter.get(evtdata=None)
+        else:
+            events.to(0)
+            evtdata.get_handles(events)
+            mcinfo = mc_type_getter.get(evtdata)
         com_energy = mcinfo.com_energy
         if args.direct:
             fill_weights_dict_v2(weights_dict["v2"],events.size(),mcinfo)
         else:
-            root_file = events.object().event().getTFile() 
+            
+            root_file = ROOT.TFile.Open(in_filename)#events.object().event().getTFile() 
             root_file.Runs.GetEntry(0)
             nr_events = getattr(root_file.Runs,"edmMergeableCounter_hltNrInputEvents_nrEventsRun_{proc_name}".format(proc_name=args.hlt_proc)).value 
             fill_weights_dict_v2(weights_dict["v2"],nr_events,mcinfo)
@@ -321,5 +324,5 @@ if __name__ == "__main__":
     fill_weights_dict_v2(weights_dict['v2'],0.,MCSample(MCSample.ProcType.MB,com_energy=com_energy))
     weights_dict['v2']['qcd'].sort(key=lambda x : x['min_pt'])
     with open(args.out,'w') as f:
-        json.dump(weights_dict,f)
+        json.dump(weights_dict,f,indent=4)
     
