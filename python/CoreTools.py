@@ -13,6 +13,25 @@ def load_fwlitelibs():
     ROOT.gSystem.Load("libDataFormatsFWLite.so");
     ROOT.FWLiteEnabler.enable()
 
+def load_cmssw_cfg(filename):
+    if filename.endswith(".py"):    
+        dirname = os.path.dirname(filename)
+        if not dirname:
+            dirname = "./"
+
+        sys.path.insert(0,dirname)
+        oldargv = sys.argv[:]
+        sys.argv = sys.argv[:1]
+        cmssw_cfg = importlib.import_module(os.path.basename(filename)[:-3]) #removing the .py
+        sys.argv = oldargv[:]
+        sys.path.pop(0)
+        return cmssw_cfg.process
+    else:
+        print("load_cmssw_cfg: error: filename {} does not end in .py, not loading".format(filename))
+        return None
+
+
+
 
 def convert_args(input_args):
     """supports ints, floats and strings and removes starting and ending quotes from strings"""
