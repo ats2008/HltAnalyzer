@@ -22,11 +22,12 @@ def get_offline_energy(obj,evtdata):
         return obj_sc.energy()
         
     offline_scs = evtdata.get("sc_hgcal_corr")
-    for sc in offline_scs:
-        if sc.seed().seed().rawId()==obj_sc.seed().seed().rawId():
-            if abs(sc.rawEnergy()-obj_sc.rawEnergy())>0.1:
-                print("error sc with {} and E {} matches to sc with E {}",sc.seed().seed().rawId(),sc.rawEnergy,obj_sc.rawEnergy())
-            return sc.energy()
+    if offline_scs:        
+        for sc in offline_scs:
+            if sc.seed().seed().rawId()==obj_sc.seed().seed().rawId():
+                if abs(sc.rawEnergy()-obj_sc.rawEnergy())>0.1:
+                    print("error sc with {} and E {} matches to sc with E {}",sc.seed().seed().rawId(),sc.rawEnergy,obj_sc.rawEnergy())
+                return sc.energy()
     return 0.
     
 
@@ -143,7 +144,7 @@ def set_corr_energy_eb(obj):
     if obj.superCluster().seed().seed().det()==ROOT.DetId.Ecal:  
         mean = 1.023
         corr_fact = mean*obj.superCluster().rawEnergy()/obj.energy()
-        obj.setEnergyPtEtaPhi(corr_fact*obj.energy(),corr_fact*obj.pt(),obj.eta(),obj.phi())
+        obj.setPt(corr_fact*obj.pt())
                
 
 def fix_hgcal_hforhe(obj,evtdata):
@@ -167,10 +168,11 @@ def main():
     parser = argparse.ArgumentParser(description='prints E/gamma pat::Electrons/Photons us')
     parser.add_argument('in_filenames',nargs="+",help='input filename')
     parser.add_argument('--out_filename','-o',default="output.root",help='output filename')
-    parser.add_argument('--min_et','-m',default=20.,type=float,help='minimum eg et') 
+    parser.add_argument('--min_et','-m',default=10.,type=float,help='minimum eg et') 
     parser.add_argument('--weights','-w',default=None,help="weights filename")
     parser.add_argument('--report','-r',default=10,type=int,help="report every N events")
     parser.add_argument('--reg_hgcal',default=None,help='filename of file with hgcal regression')
+    parser.add_argument('--prefix','-p',default="",help='prefix to append to input files')
     args = parser.parse_args()
     
     #temp for regression
@@ -215,7 +217,7 @@ def main():
         'hcalH_dep3/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=3)),
         'hcalH_dep4/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hcalen_depth,evtdata,depth=4)),
         'pms2/F' : PixelMatchTools.get_pms2_phase2,
-        'hgcaliso_layerclus/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso_layerclus,evtdata,min_dr_had=0.0,min_dr_em=0.02,max_dr=0.2,min_energy_had=0.07,min_energy_em=0.02)),
+      #  'hgcaliso_layerclus/F' : CoreTools.UnaryFunc(partial(IsolTools.get_hgcal_iso_layerclus,evtdata,min_dr_had=0.0,min_dr_em=0.02,max_dr=0.2,min_energy_had=0.07,min_energy_em=0.02)),
         'r9Full/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=False)),
         'r9Frac/F' : CoreTools.UnaryFunc(partial(cal_r9,evtdata,frac=True)),
         'clusterMaxDR/F' : cal_cluster_maxdr,
@@ -229,7 +231,7 @@ def main():
     ])
     
 
-    events = Events(CoreTools.get_filenames(args.in_filenames))
+    events = Events(CoreTools.get_filenames(args.in_filenames,args.prefix))
     nr_events = events.size()
     for event_nr,event in enumerate(events):
         if event_nr%args.report==0:
