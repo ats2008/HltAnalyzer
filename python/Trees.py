@@ -54,45 +54,62 @@ class EgHLTTree:
         max_egs = 200    
         self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",UnaryFunc(partial(len)))
        
+        prod_tag = "Unseeded"
+
         vars_ = {
-            'et/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.et)),
-            'energy/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.energy)),
+            'et/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.et)),
+            'energy/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.energy)),
             'rawEnergy/F' : UnaryFunc("superCluster().rawEnergy()"),
-            'eta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.eta)),
-            'phi/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.phi)),
+            'eta/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.eta)),
+            'phi/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.phi)),
             'phiWidth/F':UnaryFunc("superCluster().phiWidth()"),
             'nrClus/I':UnaryFunc("superCluster().clusters().size()"),
             'seedId/i':UnaryFunc("superCluster().seed().seed().rawId()"),
             'seedDet/I':UnaryFunc("superCluster().seed().seed().det()"),
-            'sigmaIEtaIEta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaClusterShapeUnseeded_sigmaIEtaIEta5x5",0)),
-            'ecalPFIsol_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEcalPFClusterIsoUnseeded",0)),
-            'hcalPFIsol_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaHcalPFClusterIsoUnseeded",0)),
-            'hgcalPFIsol_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaHGCalPFClusterIsoUnseeded",0)),
-            'trkIsolV0/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoUnseeded",0)),
-            'trkIsolV6_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoV6Unseeded",0)),
-            'trkIsolV72_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaEleGsfTrackIsoV72Unseeded",0)),
-            'trkChi2_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Chi2",0)),
-            'trkMissHits/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_MissingHits",0)),
-            'trkValidHits/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_ValidHits",0)),
-            'invESeedInvP/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_OneOESeedMinusOneOP",0)),
-            'invEInvP/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_OneOESuperMinusOneOP",0)),
-            'trkDEta/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Deta",0)),
-            'trkDEtaSeed/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_DetaSeed",0)),
-            'trkDPhi/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,"hltEgammaGsfTrackVarsUnseeded_Dphi",0)),
-            'rVar/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_rVar',0)),
-            'sigma2uu/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2uu',0)),
-            'sigma2vv/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2vv',0)),
-            'sigma2ww/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2ww',0)),
-            'sigma2xx/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2xx',0)),
-            'sigma2xy/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2xy',0)),
-            'sigma2yy/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2yy',0)),
-            'sigma2yz/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2yz',0)),
-            'sigma2zx/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2zx',0)),
-            'sigma2zz/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_sigma2zz',0)),
-            'pms2_default/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaPixelMatchVarsUnseeded_s2',0)),
-            'hgcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHGCALIDVarsUnseeded_hForHOverE',0)),
-            'hcalHForHoverE/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaHoverEUnseeded',0)), 
-            'l1TrkIsoCMSSW/F' : UnaryFunc(partial(ROOT.reco.EgTrigSumObj.var,'hltEgammaEleL1TrkIsoUnseeded',0)),
+            'sigmaIEtaIEta/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaClusterShape{}_sigmaIEtaIEta5x5".format(prod_tag),0)),
+            'ecalPFIsol_default/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaEcalPFClusterIso{}".format(prod_tag),0)),
+            'hcalPFIsol_default/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaHcalPFClusterIso{}".format(prod_tag),0)),
+            'hgcalPFIsol_default/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaHGCalPFClusterIso{}".format(prod_tag),0)),
+            'trkIsolV0/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaEleGsfTrackIso{}".format(prod_tag),0)),
+            'trkIsolV6_default/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaEleGsfTrackIsoV6{}".format(prod_tag),0)),
+            'trkIsolV72_default/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaEleGsfTrackIsoV72{}".format(prod_tag),0)),
+            'trkChi2_default/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaGsfTrackVars{}_Chi2".format(prod_tag),0)),
+            'trkMissHits/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaGsfTrackVars{}_MissingHits".format(prod_tag),0)),
+            'trkValidHits/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaGsfTrackVars{}_ValidHits".format(prod_tag),0)),
+            'invESeedInvP/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaGsfTrackVars{}_OneOESeedMinusOneOP".format(prod_tag),0)),
+            'invEInvP/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaGsfTrackVars{}_OneOESuperMinusOneOP".format(prod_tag),0)),
+            'trkDEta/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaGsfTrackVars{}_Deta".format(prod_tag),0)),
+            'trkDEtaSeed/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaGsfTrackVars{}_DetaSeed".format(prod_tag),0)),
+            'trkDPhi/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,"hltEgammaGsfTrackVars{}_Dphi".format(prod_tag),0)), 
+            'trkNrLayerIT/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaGsfTrackVars{}_NLayerIT'.format(prod_tag),0)),
+            'rVar/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_rVar'.format(prod_tag),0)),
+            'sigma2uu/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2uu'.format(prod_tag),0)),
+            'sigma2vv/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2vv'.format(prod_tag),0)),
+            'sigma2ww/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2ww'.format(prod_tag),0)),
+            'sigma2xx/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2xx'.format(prod_tag),0)),
+            'sigma2xy/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2xy'.format(prod_tag),0)),
+            'sigma2yy/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2yy'.format(prod_tag),0)),
+            'sigma2yz/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2yz'.format(prod_tag),0)),
+            'sigma2zx/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2zx'.format(prod_tag),0)),
+            'sigma2zz/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_sigma2zz'.format(prod_tag),0)),
+            'pms2_default/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaPixelMatchVars{}_s2'.format(prod_tag),0)),
+            'hgcalHForHoverE/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCALIDVars{}_hForHOverE'.format(prod_tag),0)),
+            'hcalHForHoverE/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHoverE{}'.format(prod_tag),0)), 
+            'l1TrkIsoCMSSW/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaEleL1TrkIso{}'.format(prod_tag),0)),
+            
+            'bestTrkChi2/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_Chi2'.format(prod_tag),0)),
+            'bestTrkDEta/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_Deta'.format(prod_tag),0)),
+            'bestTrkDEtaSeed/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_DetaSeed'.format(prod_tag),0)),
+            'bestTrkDPhi/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_Dphi'.format(prod_tag),0)),
+            'bestTrkMissHits/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_MissingHits'.format(prod_tag),0)),
+            'bestTrkNrLayerIT/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_NLayerIT'.format(prod_tag),0)),
+            'bestTrkESeedInvP/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_OneOESeedMinusOneOP'.format(prod_tag),0)),
+            'bestTrkInvEInvP/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_OneOESuperMinusOneOP'.format(prod_tag),0)),
+            'bestTrkValitHits/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaBestGsfTrackVars{}_ValidHits'.format(prod_tag),0)),         
+            'hgcaliso_layerclus/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCalLayerClusterIso{}'.format(prod_tag),0)),
+            'hgcaliso_layerclusem/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCalLayerClusterIso{}_em'.format(prod_tag),0)),
+            'hgcaliso_layerclushad/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.var,'hltEgammaHGCalLayerClusterIso{}_had'.format(prod_tag),0)),
+
            
         }
         vars_.update(self.eg_extra_vars)
@@ -173,7 +190,7 @@ class EgHLTTree:
             
         egobjs_raw = self.evtdata.get("egtrigobjs")
         egobjs = [eg for eg in egobjs_raw if eg.et()>self.min_et]
-        egobjs.sort(key=ROOT.reco.EgTrigSumObj.et,reverse=True)
+        egobjs.sort(key=ROOT.trigger.EgammaObject.et,reverse=True)
         for obj in egobjs:
             for update_func in self.eg_update_funcs:
                 update_func(obj)
