@@ -144,7 +144,7 @@ class MCSampleGetter:
         it also assumes a given file will only contain a given process
         """
         if not evtdata:
-            print("warning no event data, assigning to {}".format(self.last_type))
+#            print("warning no event data, assigning to {}".format(self.last_type))
             return self.last_type
 
         if self.last_file==evtdata.event.object().getTFile().GetName():            
