@@ -158,7 +158,7 @@ class EvtWeights:
             self.qcd_weights = QCDWeightCalc(self.data['v2']['qcd'],bx_freq)
             
     
-    def weight(self,evtdata,weight_type=WeightType.V2,nr_expt_pu=None):     
+    def weight(self,evtdata,weight_type=WeightType.V2,nr_expt_pu=None,get_pu_from_evt=True):     
         mcsample = self.mcsample_getter.get(evtdata)        
         if mcsample.proc_type == MCSample.ProcType.QCD or mcsample.proc_type == MCSample.ProcType.MB:
             disable_enriched = weight_type==EvtWeights.WeightType.V2NoEnrich
@@ -168,12 +168,16 @@ class EvtWeights:
             if mcsample.proc_type == MCSample.ProcType.DY: key = "dy"
             if mcsample.proc_type == MCSample.ProcType.WJets: key = "wjets"
             try:
-                lumi  = self.lumi if nr_expt_pu==None else self.bx_freq*nr_expt_pu/self.mb_xsec
+                if nr_expt_pu==None and get_pu_from_evt:
+                    pusum_intime = [x for x in evtdata.get("pu_sum") if x.getBunchCrossing()==0]
+                    nr_expt_pu = pusum_intime[0].getTrueNumInteractions()
                     
+                lumi  = self.lumi if nr_expt_pu==None else (self.bx_freq*nr_expt_pu+1)/self.mb_xsec
                 return self.data['v2'][key][0]['xsec']/self.data['v2'][key][0]['nrtot']*lumi
             except KeyError:
                 return 1.
-
+    
+ 
     def filtweight(self,evtdata): 
         mcsample = self.mcsample_getter.get(evtdata)  
         if mcsample.proc_type == MCSample.ProcType.QCD or mcsample.proc_type == MCSample.ProcType.MB:
