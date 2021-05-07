@@ -14,6 +14,7 @@ from array import array
 class EgHLTTree:
     def __init__(self,tree_name,evtdata,min_et=0.,weights=None):
         self.tree = ROOT.TTree(tree_name,'')
+        self.l1seeded = True
         self.evtdata = evtdata
         self.min_et = min_et
         self.weights = weights
@@ -54,7 +55,7 @@ class EgHLTTree:
         max_egs = 200    
         self.egobj_nr = TreeVar(self.tree,egobjnr_name+"/i",UnaryFunc(partial(len)))
        
-        prod_tag = "Unseeded"
+        prod_tag = "L1Seeded" if self.l1seeded else "Unseeded" 
 
         vars_ = {
             'et/F' : UnaryFunc(partial(ROOT.trigger.EgammaObject.et)),
@@ -188,7 +189,7 @@ class EgHLTTree:
         for pt_hat_nr,pt_hat in enumerate(pt_hats):
             self.pthats.fill(pt_hat,pt_hat_nr)
             
-        egobjs_raw = self.evtdata.get("egtrigobjs")
+        egobjs_raw = self.evtdata.get("egtrigobjs_l1seed") if self.l1seeded else self.evtdata.get("egtrigobjs") 
         egobjs = [eg for eg in egobjs_raw if eg.et()>self.min_et]
         egobjs.sort(key=ROOT.trigger.EgammaObject.et,reverse=True)
         for obj in egobjs:
