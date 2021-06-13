@@ -288,3 +288,26 @@ def make_effhists_fromcoll(numer,denom,tag="",dir_=None,out_hists=[],desc="",met
     if meta_data!=None:
         meta_data[tag]=md_dict
         
+
+def get_from_canvas(c1,classname,verbose=0):
+    if verbose>0:
+        for obj in c1.GetListOfPrimitives():
+            print(obj.ClassName())
+    return [obj for obj in c1.GetListOfPrimitives() if obj.ClassName()==classname]
+
+def get_from_file(in_file,classname="TH1D",starts_with=""):
+    objs = {}
+    for key in in_file.GetListOfKeys():
+        obj = key.ReadObj()
+        if obj.ClassName()==classname and obj.GetName().startswith(starts_with):
+            objs[obj.GetName()]=obj
+    return objs
+
+def dump_graphic_coord(c1):
+    for obj in c1.GetListOfPrimitives():
+        if hasattr(obj,"GetX1NDC"):
+            if hasattr(obj,"GetLabel"):
+                print("{} : {} : {:.3f},{:.3f},{:.3f},{:.3f}".format(obj.ClassName(),obj.GetLabel(),obj.GetX1NDC(),obj.GetY1NDC(),obj.GetX2NDC(),obj.GetY2NDC()))
+            else:
+                print("{} : {:.3f},{:.3f},{:.3f},{:.3f}".format(obj.ClassName(),obj.GetX1NDC(),obj.GetY1NDC(),obj.GetX2NDC(),obj.GetY2NDC()))
+     

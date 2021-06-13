@@ -101,7 +101,7 @@ if __name__ == "__main__":
     parser.add_argument('--out','-o',default="output.root",help='output filename')
     args = parser.parse_args()
     add_product(phaseII_products,"trig_sum","trigger::TriggerEvent","hltTriggerSummaryAOD::HLTX")
-    add_product(phaseII_products,"egtrigobjs_l1seeded","std::vector<reco::EgTrigSumObj>","hltEgammaHLTExtra:L1Seeded")
+    add_product(phaseII_products,"egtrigobjs_l1seeded","std::vector<trigger::EgammaObject>","hltEgammaHLTExtra:L1Seeded")
     evtdata = EvtData(phaseII_products,verbose=True)
     
     in_filenames_with_prefix = ['{}{}'.format(args.prefix,x) for x in args.in_filename]

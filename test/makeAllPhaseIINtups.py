@@ -17,7 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description='prints E/gamma pat::Electrons/Photons us')
     parser.add_argument('input_dirs',nargs="+",help='input filename')
     parser.add_argument('--out_dir','-o',default="./",help='output direction') 
-    parser.add_argument('--min_et','-m',default=20.,type=float,help='minimum eg et') 
+    parser.add_argument('--min_et','-m',default=10.,type=float,help='minimum eg et') 
     parser.add_argument('--weights','-w',default=None,help="weights filename")
     parser.add_argument('--report','-r',default=10,type=int,help="report every N events")
     parser.add_argument('--nr_threads','-t',default=8,type=int,help='number of threads')

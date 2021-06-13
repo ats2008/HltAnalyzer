@@ -137,12 +137,14 @@ class MCSampleGetter:
         self.last_file = None
         self.getval_re = re.compile(r'[= ]([0-9.]+)')
 
+
     def get(self,evtdata=None):
         """
         this is keyed to the TSG samples which are all pythia except WJets
         it also assumes a given file will only contain a given process
         """
         if not evtdata:
+#            print("warning no event data, assigning to {}".format(self.last_type))
             return self.last_type
 
         if self.last_file==evtdata.event.object().getTFile().GetName():            
@@ -156,7 +158,11 @@ class MCSampleGetter:
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 double getCOMEnergy(edm::ParameterSet& pset){
    const auto& genPSet = pset.getParameterSet("generator");
-   return genPSet.getParameter<double>("comEnergy");
+   if(genPSet.exists("comEnergy")){
+     return genPSet.getParameter<double>("comEnergy");
+   }else{
+     return -1.;
+   }
 }
                 """)
         cfg = ROOT.edm.ProcessConfiguration()  
@@ -164,6 +170,8 @@ double getCOMEnergy(edm::ParameterSet& pset){
         proc_hist.getConfigurationForProcess("SIM",cfg) 
         cfg_pset = evtdata.event.object().parameterSet(cfg.parameterSetID())  
         com_energy = ROOT.getCOMEnergy(cfg_pset)
+        if com_energy<0:
+            com_energy= 14000
         if sig_id >=101 and sig_id<=106:
             self.last_type = MCSample(MCSample.ProcType.MB,com_energy=com_energy)
         elif sig_id>=111 and sig_id<=124:
