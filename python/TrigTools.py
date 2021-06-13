@@ -61,20 +61,35 @@ class TrigResults:
     def __init__(self,trigs,trig_res_name="trig_res"):
         self.trig_res_name = trig_res_name
         self.trig_psetid = None
-        self.trig_indices = {x : None for x in trigs}
-        self.trig_res = {x : 0 for x in trigs}
+        self.trig_indices = {x : [] for x in trigs}
+        self.trig_res = {x : False for x in trigs}
+
+    def _set_trig_indices(self,trig_names):
+        for name in self.trig_indices:
+            self.trig_indices[name] = []
+
+        for idx,trig_name in enumerate(trig_names.triggerNames()):
+            trig_name_str = str(trig_name)
+            for name in self.trig_indices:                
+                if trig_name_str.startswith(name):
+                    self.trig_indices[name].append(idx)
+
+    def _fill_trig_res(self,trig_res):
+        for trig in self.trig_res:            
+            self.trig_res[trig] = False # resetting it
+            for idx in self.trig_indices[trig]:
+                if trig_res[idx].accept():
+                    self.trig_res[trig] = True
+                    break
         
     def fill(self,evtdata):
         trig_res = evtdata.get(self.trig_res_name)
         trig_names = evtdata.event.object().triggerNames(trig_res)
         if self.trig_psetid != trig_names.parameterSetID():
             self.trig_psetid = trig_names.parameterSetID()
-            for name in self.trig_indices:
-                self.trig_indices[name] = get_trig_indx(name,trig_names)
-        for trig in self.trig_res:
-            trig_indx = self.trig_indices[trig]
-            self.trig_res[trig] = trig_res[trig_indx].accept() if trig_indx is not None else False
-            
+            self._set_trig_indices(trig_names)
+        self._fill_trig_res(trig_res)
+       
     def result(self,trig):
         if trig in self.trig_res:
             return self.trig_res[trig]
