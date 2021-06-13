@@ -2,6 +2,19 @@
 
 A set of tools to analyse the HLT EDM files in py fwlite
 
+## Checkout instructions
+
+```
+#in your CMSSW src directory
+git clone ssh://git@gitlab.cern.ch:7999/sharper/HLTAnalyserPy.git Analysis/HLTAnalyserPy
+scram b -j 4
+```
+
+This does not depend on specific CMSSW version however the classes need to be availible if you register them even if you dont need them
+
+This supports python2 and python3 but very soon it will become python3 now that the ROOT version in CMSSW_11_3 onwards plays nice with python3
+
+
 ## EvtData module
 
 A package which eases the use retrieval of objects from the event
@@ -67,6 +80,35 @@ This package allows us to gen match objects
      * pid = pid of the particle
      * antipart if true, also allows the antiparticle
      * status: whether it is prefsr (PREFSR), post fsr (POSTFSR) or final version of the object (FINAL)
+
+## TrigTools
+
+This module allows us access trigger information. 
+
+To access whether a trigger passes or fails, you can use the TrigResults class. You can spass in a list of triggers you are interested in and then it'll track the indices they correspond to making it easier to see if a trigger passes or not. 
+
+Note to deal with versions, it matches based on "startwith", ie it selects the triggers that start with the given string. Therefore if your trigger is "HLT_Ele32_WPTight_Gsf_v14" you can just pass in "HLT_Ele32_WPTight_Gsf_v" to match any version of that trigger or "HLT_Photon" to match any triggers that start with HLT_Photon (it will OR them together).
+
+```python
+
+trig_res = TrigTools.TrigResults(["HLT_Ele32_WPTight_Gsf_v","HLT_Photon"])
+for eventnr,event in enumerate(events):
+    #now fill the trigger results object, needs to be done every event
+    trig_res.fill(evtdata)
+    #see if a given trigger passes or fails, must be one of the triggers it was 
+    #initialised with, if not an error will occur
+    trig_res.result("HLT_Ele32_WPTight_Gsf_v")  
+    
+```
+
+Then to access the trigger filter objects simply do 
+
+```python 
+for eventnr,event in enumerate(events):
+    ele32_objs = TrigTools.get_objs_passing_filter_aod(evtdata,"hltEle32WPTightGsfTrackIsoFilter")
+```
+which will return all the trigger objects passing the hltEle32WPTightGsfTrackIsoFilter
+
      
 
 ## Scripts
