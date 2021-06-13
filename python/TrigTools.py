@@ -16,7 +16,7 @@ def get_trig_indx(selected_name,trig_names):
     note one can be smarter and cache the result and update when trig_names.parameterSetID() changes 
     """
     for idx,name in enumerate(trig_names.triggerNames()):
-        if name.startswith(selected_name):
+        if str(name).startswith(selected_name):
             return idx
     return None
 
@@ -34,8 +34,14 @@ def sep_trig_ver(name):
 
 def get_objs_passing_filter_aod(evtdata,filter_name,trig_sum_name="trig_sum"):
     trig_sum = evtdata.get(trig_sum_name)
-    hlt_process = evtdata.get_label(trig_sum_name,split=True)[2]
-    filt_indx = trig_sum.filterIndex(ROOT.edm.InputTag(filter_name,"",hlt_process))
+    filt_input_tag = ROOT.edm.InputTag(filter_name)
+    #no process specified so we guess from the first entry of trig sum
+    #they should all have the same process (cant think of a scenario when not)
+    if filt_input_tag.process() == "" and trig_sum.sizeFilters():
+        hlt_process = trig_sum.filterTag(0).process()
+        filt_input_tag = ROOT.edm.InputTag(filter_name,"",hlt_process)
+    
+    filt_indx = trig_sum.filterIndex(filt_input_tag)
     passing_objs = []
     if filt_indx < trig_sum.sizeFilters():
         keys = trig_sum.filterKeys(filt_indx)
@@ -45,13 +51,21 @@ def get_objs_passing_filter_aod(evtdata,filter_name,trig_sum_name="trig_sum"):
         
                                       
 class TrigResults:
-    def __init__(self,trigs):
+    """
+    class acts as a name cache to allow the trigger results to be accessed
+    by trigger name
+
+    it takes as input the list of specific triggers to look for rather than 
+    reading all possible triggers
+    """
+    def __init__(self,trigs,trig_res_name="trig_res"):
+        self.trig_res_name = trig_res_name
         self.trig_psetid = None
         self.trig_indices = {x : None for x in trigs}
         self.trig_res = {x : 0 for x in trigs}
         
     def fill(self,evtdata):
-        trig_res = evtdata.get("trig_res")
+        trig_res = evtdata.get(self.trig_res_name)
         trig_names = evtdata.event.object().triggerNames(trig_res)
         if self.trig_psetid != trig_names.parameterSetID():
             self.trig_psetid = trig_names.parameterSetID()

@@ -114,6 +114,8 @@ add_product(std_products,"egtrigobjs_unseeded","std::vector<trigger::EgammaObjec
 add_product(std_products,"genparts","std::vector<reco::GenParticle>","genParticles")
 add_product(std_products,"geninfo","GenEventInfoProduct","generator")
 add_product(std_products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
+add_product(std_products,"trig_sum","trigger::TriggerEvent","hltTriggerSummaryAOD")
+add_product(std_products,"trig_res","edm::TriggerResults","TriggerResults")
 
 phaseII_products = []
 add_product(phaseII_products,"egtrigobjs","std::vector<trigger::EgammaObject>","hltEgammaHLTExtra")
