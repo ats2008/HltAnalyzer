@@ -13,16 +13,18 @@ from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products,
 import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import Analysis.HLTAnalyserPy.GenTools as GenTools
 import Analysis.HLTAnalyserPy.HistTools as HistTools
-
+import Analysis.HLTAnalyserPy.TrigTools as TrigTools
 import Analysis.HLTAnalyserPy.L1Tools as L1Tools
 from Analysis.HLTAnalyserPy.CoreTools import UnaryFunc
 from Analysis.HLTAnalyserPy.NtupTools import TreeVar
 from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
+
+
 from functools import partial
 import itertools
 
 class L1Tree:
-    def __init__(self,tree_name,evtdata):
+    def __init__(self,tree_name,evtdata):   
         self.tree = ROOT.TTree(tree_name,'')
         self.evtdata = evtdata
         self.initialised = False
@@ -96,19 +98,23 @@ if __name__ == "__main__":
     add_product(std_products,"jet","BXVector<l1t::Jet>","hltGtStage2Digis:Jet")
     add_product(std_products,"muon","BXVector<l1t::Muon>","hltGtStage2Digis:Muon")
     add_product(std_products,"tau","BXVector<l1t::Tau>","hltGtStage2Digis:Tau")
+    add_product(std_products,"trig_res","edm::TriggerResults","TriggerResults")
 
     evtdata = EvtData(std_products,verbose=True)
     
     events = Events(CoreTools.get_filenames(args.in_filenames,args.prefix))
     nrevents = events.size()
     print("number of events",nrevents)
-    
+    trig_res = TrigTools.TrigResults(["DST_ZeroBias_v"])
     out_file = ROOT.TFile.Open(args.out,"RECREATE")
     tree = L1Tree("l1Tree",evtdata)
     for eventnr,event in enumerate(events):
         if eventnr%50000==0:
             print("{}/{}".format(eventnr,nrevents))
+    
         evtdata.get_handles(event)
-        tree.fill()
+        trig_res.fill(evtdata)
+        if trig_res.result("DST_ZeroBias_v"):
+            tree.fill()
     out_file.Write()
         
