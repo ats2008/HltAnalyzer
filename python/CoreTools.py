@@ -7,6 +7,8 @@ import sys
 import re
 from enum import Enum
 import functools
+import os
+import importlib
 
 def load_fwlitelibs():
     ROOT.gSystem.Load("libFWCoreFWLite.so");
