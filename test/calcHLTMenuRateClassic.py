@@ -3,6 +3,7 @@ import Analysis.HLTAnalyserPy.CoreTools as CoreTools
 import argparse
 import json
 import re
+import time
 from collections import OrderedDict
 
 #really needs to go into a package....
@@ -116,9 +117,9 @@ if __name__ == "__main__":
     l1menu_tree.GetEntry(0)
     l1menu = l1menu_tree.L1TUtmTriggerMenu__
 
-    rateTree = ROOT.TChain("tsgRateTree","")
+    ratetree = ROOT.TChain("tsgRateTree","")
     for filename in filenames:
-        rateTree.Add(filename)
+        ratetree.Add(filename)
     
     with open(args.cfg,'r') as f:
         cfg = json.load(f)
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     l1_groups_names = [convert_to_vec(v['seednames'],"std::string") for k,v in l1_groups.items()]
     l1_groups_indices = [convert_to_vec(v['seedindices'],"size_t") for k,v in l1_groups.items()]
 
-    l1ExpresConv = ROOT.RateFuncs.L1SeedExpresConverter(convert_to_vec(l1_groups_names,"std::vector<std::string>"),
+    l1expresconv = ROOT.RateFuncs.L1SeedExpresConverter(convert_to_vec(l1_groups_names,"std::vector<std::string>"),
                                                         convert_to_vec(l1_groups_indices,"std::vector<size_t>"))
 
     print("nr col ",nr_col)
@@ -140,10 +141,19 @@ if __name__ == "__main__":
         trig_paths,datasets,nr_col
     )
     
+    start_time = time.time()
+    nrentries = ratetree.GetEntries()
+    for entrynr,entry in enumerate(ratetree):
+        if entrynr%10000==0:
+            elapsed_time = time.time()-start_time
+            est_finish = "n/a"
+            if entrynr!=0 or elapsed_time==0:
+                remaining = float(nrentries-entrynr)/entrynr*elapsed_time 
+                est_finish = time.ctime(remaining+start_time+elapsed_time)
+            print("{} / {} time: {:.1f}s, est finish {}".format(entrynr,nrentries,elapsed_time,est_finish))
 
-    for entry in rateTree:
-        l1ExpresBits = l1ExpresConv(entry.l1ResFinal)
-        trigmenu.fill(l1ExpresBits,entry.hltRes)
+        l1expresbits = l1expresconv(entry.l1ResFinal)
+        trigmenu.fill(l1expresbits,entry.hltRes)
         
     
     
