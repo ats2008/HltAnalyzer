@@ -1,5 +1,6 @@
 <lcgdict>
   <class name="FiltFuncs" persistent="false"/>
+  <class name="RateFuncs" persistent="false"/>
   <class name="QCDWeightCalc" persistent="false"/>
 </lcgdict>
 
