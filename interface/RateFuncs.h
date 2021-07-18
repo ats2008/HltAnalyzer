@@ -102,6 +102,17 @@ public:
     }
       
   };
+  enum class TrigType {
+    HLT,ALCA,DST,MC,UNKNOWN
+      };
+      
+  static TrigType getTrigType(const std::string& name){
+      if(name.find("HLT_")==0) return TrigType::HLT;
+      if(name.find("AlCa_")==0) return TrigType::ALCA;
+      if(name.find("DST_")==0) return TrigType::DST;
+      if(name.find("MC_")==0) return TrigType::MC;
+      return TrigType::UNKNOWN;	   
+  } 
 
   class TrigPath {
   private:
@@ -109,6 +120,7 @@ public:
     std::string name_;
     size_t hltIndex_;
     size_t l1SeedIndex_;
+    TrigType type_;
     std::vector<int> prescales_;
     std::vector<std::string> l1Seeds_;
 
@@ -118,11 +130,15 @@ public:
   public:
     TrigPath(std::string name,size_t hltIndex,size_t l1SeedIndex, std::vector<int> prescales, std::vector<std::string> l1Seeds):
       name_(name),hltIndex_(hltIndex),l1SeedIndex_(l1SeedIndex),
+      type_(getTrigType(name_)),
       prescales_(prescales),l1Seeds_(l1Seeds),
       psCount_(341),
       nrPassed_(prescales_.size(),0)
-    {}
-     
+    {
+
+    }
+   
+    
 
     void fillResults(const TBits& l1Bits,const TBits& hltBits,std::vector<int>& result){
       if(nrPassed_.size()!=result.size()){
@@ -136,9 +152,18 @@ public:
 		       [res,this](int ps){return res && ps!=0 && this->psCount_%ps==0;});
 	std::transform(nrPassed_.begin(),nrPassed_.end(),result.begin(),nrPassed_.begin(),std::plus<int>());
 
-      }else if( hltBits.TestBitNumber(hltIndex_)){
-	std::cout <<"warning "<<name()<<" passes but fails L1 seeds, this is not possible without an error "<<l1SeedIndex_<<std::endl;
+      }else{
+	//zeroing in the results
+	//maybe have a flag which allows us to know if 
+	//the vector is set
+	for(auto& res: result){
+	  res = 0;
+	}
+	if( hltBits.TestBitNumber(hltIndex_)){
+	  std::cout <<"warning "<<name()<<" passes but fails L1 seeds, this is not possible without an error "<<l1SeedIndex_<<std::endl;
+	}
       }
+	
 
 	
     }
@@ -147,6 +172,7 @@ public:
     const std::string& name()const{return name_;}
     size_t hltIndex()const{return hltIndex_;}
     size_t l1SeedIndx()const{return l1SeedIndex_;}
+    TrigType trigType()const{return type_;}
     const std::vector<std::string>& l1Seeds()const{return l1Seeds_;}
     const std::vector<int>& prescales()const{return prescales_;}
     
@@ -172,7 +198,12 @@ public:
       nrPassed_(nrCols,0){}
       
 	      
-
+    const std::string& name()const{return name_;}
+    const std::vector<std::string>& pathNames()const{return pathNames_;}
+    const std::vector<size_t>& pathIndices()const{return pathIndices_;}
+    const std::vector<int>& nrPassed()const{return nrPassed_;}
+    
+  
     bool pass(const std::vector<int>& result){
       for(const auto& indx: pathIndices_){
 	if(result[indx]) return true;
@@ -234,7 +265,7 @@ public:
       for(size_t psCol = 0; psCol < nrPassed_.size();psCol++){
 	bool pass = false;
 	for(size_t pathNr = 0; pathNr < result_.size(); pathNr++){
-	  if(result_[pathNr][psCol]){
+	  if(paths_[pathNr].trigType()==TrigType::HLT && result_[pathNr][psCol]){
 	    pass = true;
 	    break;
 	  }
