@@ -126,6 +126,8 @@ public:
 
     int psCount_;
     std::vector<int> nrPassed_;
+    std::vector<int> result_;
+    bool anyPSColPass_;
 
   public:
     TrigPath(std::string name,size_t hltIndex,size_t l1SeedIndex, std::vector<int> prescales, std::vector<std::string> l1Seeds):
@@ -133,42 +135,43 @@ public:
       type_(getTrigType(name_)),
       prescales_(prescales),l1Seeds_(l1Seeds),
       psCount_(341),
-      nrPassed_(prescales_.size(),0)
+      nrPassed_(prescales_.size(),0),
+      result_(prescales_.size(),0),
+      anyPSColPass_(false)
     {
 
     }
    
     
 
-    void fillResults(const TBits& l1Bits,const TBits& hltBits,std::vector<int>& result){
-      if(nrPassed_.size()!=result.size()){
-	std::cout <<"TrigPath: ps error "<<nrPassed_.size()<<" vs "<<result.size()<<std::endl;
-      }
+    void fillResults(const TBits& l1Bits,const TBits& hltBits){
+    
       if(l1Bits.TestBitNumber(l1SeedIndex_)){
 	
 	psCount_++;
 	bool res = hltBits.TestBitNumber(hltIndex_);
-	std::transform(prescales_.begin(),prescales_.end(),result.begin(),
+	std::transform(prescales_.begin(),prescales_.end(),result_.begin(),
 		       [res,this](int ps){return res && ps!=0 && this->psCount_%ps==0;});
-	std::transform(nrPassed_.begin(),nrPassed_.end(),result.begin(),nrPassed_.begin(),std::plus<int>());
+	std::transform(nrPassed_.begin(),nrPassed_.end(),result_.begin(),nrPassed_.begin(),std::plus<int>());
+	anyPSColPass_ = res && std::any_of(result_.begin(),result_.end(),[](int i){return i!=0;});
+	  
 
       }else{
-	//zeroing in the results
-	//maybe have a flag which allows us to know if 
-	//the vector is set
-	for(auto& res: result){
-	  res = 0;
+	//previously it passed and we have to reset it
+	if(anyPSColPass_){
+	  for(auto& res: result_){
+	    res = 0;
+	  }
+	  anyPSColPass_ = false;
 	}
 	if( hltBits.TestBitNumber(hltIndex_)){
 	  std::cout <<"warning "<<name()<<" passes but fails L1 seeds, this is not possible without an error "<<l1SeedIndex_<<std::endl;
 	}
       }
-	
-
-	
     }
 
     const std::vector<int>& nrPassed()const{return nrPassed_;}
+    const std::vector<int>& result()const{return result_;}
     const std::string& name()const{return name_;}
     size_t hltIndex()const{return hltIndex_;}
     size_t l1SeedIndx()const{return l1SeedIndex_;}
@@ -202,27 +205,18 @@ public:
     const std::vector<std::string>& pathNames()const{return pathNames_;}
     const std::vector<size_t>& pathIndices()const{return pathIndices_;}
     const std::vector<int>& nrPassed()const{return nrPassed_;}
-    
-  
-    bool pass(const std::vector<int>& result){
-      for(const auto& indx: pathIndices_){
-	if(result[indx]) return true;
-      }
-      return false;
-    }
-    
+     
     //first index is path, second is column
-    void fill(const std::vector<std::vector<int> >& pathResults){
+    void fill(const std::vector<TrigPath> & pathResults){
       if(pathResults.empty()){
 	return; 
       }
-      if(pathResults[0].size()!=nrPassed_.size()){
-	std::cout <<"ps col mismatch "<<pathResults[0].size()<<" vs "<<nrPassed_.size()<<std::endl;
+      if(pathResults[0].result().size()!=nrPassed_.size()){
+	std::cout <<"ps col mismatch "<<pathResults[0].result().size()<<" vs "<<nrPassed_.size()<<std::endl;
       }
-      std::vector<int> result(pathResults.size(),0);
       for(size_t psColl = 0;psColl<nrPassed_.size();psColl++){
 	for(auto pathIndx : pathIndices_){	  
-	  if(pathResults[pathIndx][psColl]){
+	  if(pathResults[pathIndx].result()[psColl]){
 	    nrPassed_[psColl]++;
 	    break;
 	  }
@@ -239,15 +233,11 @@ public:
     std::vector<int> nrPassed_;
     int nrTot_;
     
-    //the path resultsresult of the current fill
-    std::vector<std::vector<int> > result_;
-
   public:
     TrigMenu(std::vector<TrigPath> paths,std::vector<TrigGroup> datasets,int nrCol):
       paths_(paths),datasets_(datasets),
       nrPassed_(nrCol,0),
-      nrTot_(0),
-      result_(paths_.size(),std::vector<int>(nrCol,0))
+      nrTot_(0)
     {
     }
 
@@ -255,21 +245,20 @@ public:
       //first we fill the results then use that to fill the datasets
       //and nrPassed
       for(size_t pathNr=0;pathNr<paths_.size();pathNr++){
-	paths_[pathNr].fillResults(l1Expres,hltMenu,result_[pathNr]);
+	paths_[pathNr].fillResults(l1Expres,hltMenu);
       }
       for(auto& dataset : datasets_){
-	dataset.fill(result_);
+	dataset.fill(paths_);
 	
       }
       //probably could make this a std::transform too
       for(size_t psCol = 0; psCol < nrPassed_.size();psCol++){
 	bool pass = false;
-	for(size_t pathNr = 0; pathNr < result_.size(); pathNr++){
-	  if(paths_[pathNr].trigType()==TrigType::HLT && result_[pathNr][psCol]){
+	for(const auto& path : paths_){
+	  if(path.trigType()==TrigType::HLT && path.result()[psCol]){
 	    pass = true;
 	    break;
-	  }
-	  
+	  }	  
 	}
 	if(pass) nrPassed_[psCol]++;
       }
