@@ -123,6 +123,7 @@ public:
     TrigType type_;
     std::vector<int> prescales_;
     std::vector<std::string> l1Seeds_;
+    bool physics_;
 
     int psCount_;
     std::vector<int> nrPassed_;
@@ -130,10 +131,10 @@ public:
     bool anyPSColPass_;
 
   public:
-    TrigPath(std::string name,size_t hltIndex,size_t l1SeedIndex, std::vector<int> prescales, std::vector<std::string> l1Seeds):
+    TrigPath(std::string name,size_t hltIndex,size_t l1SeedIndex, std::vector<int> prescales, std::vector<std::string> l1Seeds, bool physics=true):
       name_(name),hltIndex_(hltIndex),l1SeedIndex_(l1SeedIndex),
       type_(getTrigType(name_)),
-      prescales_(prescales),l1Seeds_(l1Seeds),
+      prescales_(prescales),l1Seeds_(l1Seeds),physics_(physics),
       psCount_(341),
       nrPassed_(prescales_.size(),0),
       result_(prescales_.size(),0),
@@ -176,6 +177,7 @@ public:
     size_t hltIndex()const{return hltIndex_;}
     size_t l1SeedIndx()const{return l1SeedIndex_;}
     TrigType trigType()const{return type_;}
+    bool physics()const{return physics_;}
     const std::vector<std::string>& l1Seeds()const{return l1Seeds_;}
     const std::vector<int>& prescales()const{return prescales_;}
     
@@ -255,7 +257,7 @@ public:
       for(size_t psCol = 0; psCol < nrPassed_.size();psCol++){
 	bool pass = false;
 	for(const auto& path : paths_){
-	  if(path.trigType()==TrigType::HLT && path.result()[psCol]){
+	  if(path.physics() && path.result()[psCol]){
 	    pass = true;
 	    break;
 	  }	  

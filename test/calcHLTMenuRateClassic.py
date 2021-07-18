@@ -56,7 +56,7 @@ def make_trigpaths(cfg,path2indx,l1group2indx):
         l1seeds = convert_to_vec(pathdata['l1_seeds'],"std::string")
         hlt_indx = path2indx[pathname]
         l1_indx = l1group2indx[make_l1seed_str(pathdata['l1_seeds'])]
-        trigpaths.push_back(ROOT.RateFuncs.TrigPath(pathname,hlt_indx,l1_indx['indx'],prescales,l1seeds))        
+        trigpaths.push_back(ROOT.RateFuncs.TrigPath(pathname,hlt_indx,l1_indx['indx'],prescales,l1seeds,pathdata['physics']))        
     return trigpaths
 
 def get_nr_pscols(cfg):
@@ -98,12 +98,6 @@ if __name__ == "__main__":
     parser.add_argument('--report','-r',default=100000,type=int,help='input filename')
     args = parser.parse_args()
 
-    nrpu_bins = 25
-    pu_min = 10
-    pu_max = 60
-
-    ROOT.ROOT.EnableImplicitMT()
-
     filenames = CoreTools.get_filenames(args.in_filenames)
 
     #for now just assume its all the same menu
@@ -143,6 +137,13 @@ if __name__ == "__main__":
     
     start_time = time.time()
     nrentries = ratetree.GetEntries()
+    nr_ls = 97*8
+    ls_length = 23.31
+    prescale = 1110
+    inst_lumi_actual = 1.71
+    inst_lumi_target = 1.9
+    normfac = inst_lumi_target/inst_lumi_actual*prescale/(nr_ls*ls_length)
+    
     for entrynr,entry in enumerate(ratetree):
         if entrynr%10000==0:
             elapsed_time = time.time()-start_time
@@ -151,6 +152,11 @@ if __name__ == "__main__":
                 remaining = float(nrentries-entrynr)/entrynr*elapsed_time 
                 est_finish = time.ctime(remaining+start_time+elapsed_time)
             print("{} / {} time: {:.1f}s, est finish {}".format(entrynr,nrentries,elapsed_time,est_finish))
+
+        #temporary nasty hack for lumi section selection
+        lumisec =  ratetree.lumiSec
+        if lumisec < 53 or lumisec >151 or lumisec==82 or lumisec==83:
+            continue
 
         l1expresbits = l1expresconv(entry.l1ResFinal)
         trigmenu.fill(l1expresbits,entry.hltRes)

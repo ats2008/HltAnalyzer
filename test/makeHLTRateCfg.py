@@ -75,8 +75,17 @@ def get_group(group_data,path):
     if group_name not in group_data:
         group_data[group_name] = len(group_data.keys())
     return group_data[group_name]
-        
-def get_path_data(process,path,group_data):
+                
+def get_physics_datasets(process,physics_streams):
+    datasets = []
+    if hasattr(process,"streams"):
+        for physics_stream in physics_streams:
+            if process.streams.hasParameter(physics_stream):
+                datasets.extend(process.streams.getParameter(physics_stream).value())
+        datasets = list(set(datasets))
+    return datasets
+
+def get_path_data(process,path,group_data,physics_datasets):
     data = OrderedDict()
     data['datasets'] = get_datasets(process,path)
     data['group'] = get_group(group_data,path)
@@ -84,6 +93,7 @@ def get_path_data(process,path,group_data):
     data['l1_seeds'] = get_l1_seeds(process,path)
     data['prescales'] = get_prescales(process,path)
     data['disable'] = 0
+    data['physics'] = any(dataset in physics_datasets for dataset in data['datasets']) if physics_datasets else 1
     return data
 
 if __name__ == "__main__":
@@ -97,8 +107,13 @@ if __name__ == "__main__":
     process = CoreTools.load_cmssw_cfg(args.cfg)
     cfg_dict = OrderedDict()
     group_data = {}
+
+    physics_streams = {"PhysicsMuons","PhysicsHadronsTaus","PhysicsEGamma","PhysicsCommissioning"}
+    physics_datasets = get_physics_datasets(process,physics_streams)
+
     for name,path in process.paths_().items():
-        cfg_dict[strip_path_version(name)] = get_path_data(process,path,group_data)
-        
+        cfg_dict[strip_path_version(name)] = get_path_data(process,path,group_data,physics_datasets)
+        cfg_dict[strip_path_version(name)]['prescales'] =  cfg_dict[strip_path_version(name)]['prescales'][:2]
+
     with open(args.out,'w') as f:
         json.dump(cfg_dict,f,indent=0)
