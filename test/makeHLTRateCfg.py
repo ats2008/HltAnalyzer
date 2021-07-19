@@ -96,6 +96,23 @@ def get_path_data(process,path,group_data,physics_datasets):
     data['physics'] = any(dataset in physics_datasets for dataset in data['datasets']) if physics_datasets else 1
     return data
 
+def adjust_ps_cols(input_ps):
+    """
+    this is a rather specific custom function which depends on the menu
+    it assumes the main column is column 1
+    [0] = column 1
+    [1] = all triggers at ps==1 set to 0
+    [2] = all triggers at ps!=1 set to 0
+    [3] = all triggers at ps!=1 x2
+    """
+    prescale = input_ps[1]
+    prescales = [prescale]
+    prescales.append(prescale if prescale!=1 else 0)
+    prescales.append(prescale if prescale==1 else 0)
+    prescales.append(prescale if prescale==1 else prescale*2)
+    return prescales
+    
+
 if __name__ == "__main__":
     
 
@@ -113,7 +130,9 @@ if __name__ == "__main__":
 
     for name,path in process.paths_().items():
         cfg_dict[strip_path_version(name)] = get_path_data(process,path,group_data,physics_datasets)
-        cfg_dict[strip_path_version(name)]['prescales'] =  cfg_dict[strip_path_version(name)]['prescales'][:2]
+        cfg_dict[strip_path_version(name)]['prescales'] =  adjust_ps_cols(cfg_dict[strip_path_version(name)]['prescales'])
+        
+        
 
     with open(args.out,'w') as f:
         json.dump(cfg_dict,f,indent=0)
