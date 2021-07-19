@@ -131,6 +131,11 @@ public:
     bool anyPSColPass_;
 
   public:
+    TrigPath():hltIndex_(0),l1SeedIndex_(0),
+	       type_(RateFuncs::TrigType::UNKNOWN),
+	       physics_(false),
+	       psCount_(0),
+	       anyPSColPass_(false){}
     TrigPath(std::string name,size_t hltIndex,size_t l1SeedIndex, std::vector<int> prescales, std::vector<std::string> l1Seeds, bool physics=true):
       name_(name),hltIndex_(hltIndex),l1SeedIndex_(l1SeedIndex),
       type_(getTrigType(name_)),
@@ -193,7 +198,7 @@ public:
     std::vector<int> nrPassed_;
 
   public:
-    
+    TrigGroup(){}
     TrigGroup(std::string name,
 	      std::vector<std::string> pathNames,
 	      std::vector<size_t> pathIndices,int nrCols):
@@ -236,6 +241,7 @@ public:
     int nrTot_;
     
   public:
+    TrigMenu():nrTot_(0){}
     TrigMenu(std::vector<TrigPath> paths,std::vector<TrigGroup> datasets,int nrCol):
       paths_(paths),datasets_(datasets),
       nrPassed_(nrCol,0),

@@ -118,6 +118,7 @@ if __name__ == "__main__":
     with open(args.cfg,'r') as f:
         cfg = json.load(f)
  
+    outfile = ROOT.TFile.Open(args.out_filename,"RECREATE")
     
     l1_groups = make_l1groups(cfg,l1menu)
     trig_paths = make_trigpaths(cfg,path2indx,l1_groups)
@@ -162,4 +163,6 @@ if __name__ == "__main__":
         trigmenu.fill(l1expresbits,entry.hltRes)
         
     
+    outfile.WriteObjectAny(trigmenu,"RateFuncs::TrigMenu","trigMenu")
+    outfile.Write()
     
