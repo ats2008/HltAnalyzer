@@ -123,10 +123,14 @@ public:
     TrigType type_;
     std::vector<int> prescales_;
     std::vector<std::string> l1Seeds_;
+    int l1Prescale_;
     bool physics_;
 
     int psCount_;
     std::vector<int> nrPassed_;
+    std::vector<int> nrUnique_;
+    //overlaps are [ps col][path]
+    std::vector<std::vector<int> > overlaps_;
     std::vector<int> result_;
     bool anyPSColPass_;
 
@@ -136,19 +140,43 @@ public:
 	       physics_(false),
 	       psCount_(0),
 	       anyPSColPass_(false){}
-    TrigPath(std::string name,size_t hltIndex,size_t l1SeedIndex, std::vector<int> prescales, std::vector<std::string> l1Seeds, bool physics=true):
+    TrigPath(std::string name,size_t hltIndex,size_t l1SeedIndex, std::vector<int> prescales, std::vector<std::string> l1Seeds, int l1Prescale=1,bool physics=true):
       name_(name),hltIndex_(hltIndex),l1SeedIndex_(l1SeedIndex),
       type_(getTrigType(name_)),
-      prescales_(prescales),l1Seeds_(l1Seeds),physics_(physics),
+      prescales_(prescales),l1Seeds_(l1Seeds),l1Prescale_(l1Prescale),physics_(physics),
       psCount_(341),
       nrPassed_(prescales_.size(),0),
+      nrUnique_(prescales_.size(),0),
+      overlaps_(prescales_.size()),
       result_(prescales_.size(),0),
       anyPSColPass_(false)
     {
 
     }
    
-    
+    void addUniqueCount(size_t psCol){
+      if(psCol < nrUnique_.size()){
+	nrUnique_[psCol]++;
+      }else{
+	std::cout <<"TrigPath: addUniqueCount: Error "<<psCol<<" is invalid, nr cols "<<nrUnique_.size()<<std::endl;
+      }
+    }
+	
+    void fillOverlaps(const std::vector<TrigPath>& pathResults){
+      for(size_t psCol = 0; psCol<result_.size();psCol++){
+	if(overlaps_[psCol].empty()){
+	  overlaps_[psCol].resize(pathResults.size(),0);
+	}
+	if(physics() && result_[psCol]){
+	  for(size_t pathNr=0; pathNr<pathResults.size();pathNr++){
+	    const auto& path = pathResults[pathNr];
+	    if(path.physics() && path.result()[psCol]){
+	      overlaps_[psCol][pathNr]++;
+	    }
+	  }
+	}
+      }
+    }
 
     void fillResults(const TBits& l1Bits,const TBits& hltBits){
     
@@ -176,7 +204,9 @@ public:
       }
     }
 
-    const std::vector<int>& nrPassed()const{return nrPassed_;}
+    const std::vector<int>& nrPassed()const{return nrPassed_;} 
+    const std::vector<int>& nrUnique()const{return nrUnique_;}
+    const std::vector<std::vector<int> >& overlaps()const{return overlaps_;}
     const std::vector<int>& result()const{return result_;}
     const std::string& name()const{return name_;}
     size_t hltIndex()const{return hltIndex_;}
@@ -185,7 +215,7 @@ public:
     bool physics()const{return physics_;}
     const std::vector<std::string>& l1Seeds()const{return l1Seeds_;}
     const std::vector<int>& prescales()const{return prescales_;}
-    
+    int l1prescale()const{return l1Prescale_;}
   };
   
 
@@ -212,7 +242,7 @@ public:
     const std::vector<std::string>& pathNames()const{return pathNames_;}
     const std::vector<size_t>& pathIndices()const{return pathIndices_;}
     const std::vector<int>& nrPassed()const{return nrPassed_;}
-     
+
     //first index is path, second is column
     void fill(const std::vector<TrigPath> & pathResults){
       if(pathResults.empty()){
@@ -255,10 +285,40 @@ public:
       for(size_t pathNr=0;pathNr<paths_.size();pathNr++){
 	paths_[pathNr].fillResults(l1Expres,hltMenu);
       }
+      
       for(auto& dataset : datasets_){
-	dataset.fill(paths_);
-	
+	dataset.fill(paths_);	
       }
+
+      //urgh horrible hack, need restructure to fix
+      //vector of ps columns with the index of the unique path passing
+      std::vector<size_t> unique(nrPassed_.size(),paths_.size());     
+      for(size_t psColNr=0;psColNr<nrPassed_.size();psColNr++){
+	for(size_t pathNr=0;pathNr<paths_.size();pathNr++){
+	  if(paths_[pathNr].physics() && paths_[pathNr].result()[psColNr]){
+	    //std::cout <<"path passed col "<<psColNr<<" "<<paths_[pathNr].name()<<" existing path passed "<<unique[psColNr]<<" nrPaths "<<paths_.size()<<std::endl;
+	    if(unique[psColNr]==paths_.size()){
+	      //no other path has passed yet, set this as the unique path
+	      unique[psColNr] = pathNr;
+	    }else{
+	      //another path has passed, reset back to no path uniquly passing
+	      //and terminate the loop
+	      unique[psColNr] = paths_.size();
+	      break;
+	    }
+	  }	    
+	}
+      }
+      for(size_t psCol=0;psCol<unique.size();psCol++){
+	auto uniquePathIdx = unique[psCol];
+	if(uniquePathIdx<paths_.size()){
+	  paths_[uniquePathIdx].addUniqueCount(psCol);
+	}
+      }
+      for(auto& path : paths_){
+	path.fillOverlaps(paths_);
+      }
+
       //probably could make this a std::transform too
       for(size_t psCol = 0; psCol < nrPassed_.size();psCol++){
 	bool pass = false;
@@ -273,9 +333,10 @@ public:
       nrTot_++;
     }
 
+
     const std::vector<TrigPath>& paths()const{return paths_;}
     const std::vector<TrigGroup>& datasets()const{return datasets_;}
-    const std::vector<int>& nrPassed()const{return nrPassed_;}
+    const std::vector<int>& nrPassed()const{return nrPassed_;}   
     int nrTot()const{return nrTot_;}
 
   };
