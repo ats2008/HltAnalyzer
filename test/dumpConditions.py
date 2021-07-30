@@ -11,7 +11,13 @@ process.writer = cms.EDAnalyzer("FWLiteESRecordWriterAnalyzer",
            type=cms.untracked.string("L1TUtmTriggerMenu"),
            label=cms.untracked.string("")
            )
-       )
+       ),
+   L1TGlobalPrescalesVetosRcd = cms.untracked.VPSet(
+       cms.untracked.PSet(
+         type=cms.untracked.string("L1TGlobalPrescalesVetos"),
+           label=cms.untracked.string("")
+           )
+       )  
    )
 process.GlobalTag = cms.ESSource( "PoolDBESSource",
     globaltag = cms.string( "113X_dataRun3_HLT_v3" ),
