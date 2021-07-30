@@ -76,10 +76,6 @@ class EcalULTree:
             
         self.eg_vars = [self.egul_vars,self.egrun2_vars,self.egrun3_vars]
 
-        #self.metUL = TreeVar(self.tree,"metUL/F",None)
-        #self.metRun2 = TreeVar(self.tree,"metRun2/F",None)
-        #self.metRun3 = TreeVar(self.tree,"metRun3/F",None)
-
         self.initialised = True
 
     def fill(self):
@@ -101,10 +97,6 @@ class EcalULTree:
                     else:
                         var_.clear()
 
-     #   self.metUL.fill(TrigTools.get_objs_passing_filter_aod(evtdata,"hltPFMET120UL")[0].et())
-    #    self.metRun2.fill(TrigTools.get_objs_passing_filter_aod(evtdata,"hltPFMET120Run2")[0].et())
-   #     self.metRun3.fill(TrigTools.get_objs_passing_filter_aod(evtdata,"hltPFMET120Run3")[0].et())
-
         self.tree.Fill()
   
 
@@ -120,9 +112,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     std_products = []
    
-    add_product(std_products,"ecalcand_ul","vector<reco::RecoEcalCandidate> ","hltEgammaCandidatesUL")
-    add_product(std_products,"ecalcand_run2","vector<reco::RecoEcalCandidate> ","hltEgammaCandidatesRun2")
-    add_product(std_products,"ecalcand_run3","vector<reco::RecoEcalCandidate> ","hltEgammaCandidatesRun3")
+    add_product(std_products,"ecalcand_ul","vector<reco::RecoEcalCandidate> ","hltEgammaCandidatesULUnseeded")
+    add_product(std_products,"ecalcand_run2","vector<reco::RecoEcalCandidate> ","hltEgammaCandidatesRun2Unseeded")
+    add_product(std_products,"ecalcand_run3","vector<reco::RecoEcalCandidate> ","hltEgammaCandidatesRun3Unseeded")
     add_product(std_products,"trig_sum","trigger::TriggerEvent","hltTriggerSummaryAOD")
     evtdata = EvtData(std_products,verbose=True)
     
