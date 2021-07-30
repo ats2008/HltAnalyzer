@@ -27,7 +27,7 @@ def make_path2indx(path_names_vec):
 def make_l1seed_str(l1_seeds):
     return ":".join(l1_seeds) if l1_seeds else "None"
 
-def make_l1groups(cfg,l1menu):
+def make_l1groups(cfg,l1menu,l1ps_tbl):
     indx_count = 0
     l1groups = OrderedDict()
 
@@ -37,13 +37,20 @@ def make_l1groups(cfg,l1menu):
         l1seeds = make_l1seed_str(pathdata['l1_seeds']) 
         if pathdata['l1_seeds']:
             l1seed_indices = [l1name_to_indx[x] for x in pathdata['l1_seeds']]
+            #take the lowest non zero prescale 
+            l1ps_list = [l1ps_tbl[indx] for indx in l1seed_indices if l1ps_tbl[indx]!=0]
+            l1ps = min(l1ps_list) if l1ps_list else 0
+
         else:
             l1seed_indices = []
+            l1ps = 1
         
         if l1seeds not in l1groups:
             l1groups[l1seeds] = {"seednames" : pathdata['l1_seeds'],
                                  "seedindices" : l1seed_indices,
-                                 "indx" : indx_count}
+                                 "indx" : indx_count,
+                                 "prescale" : l1ps
+                             }
             indx_count+=1
     return l1groups
 
@@ -56,7 +63,7 @@ def make_trigpaths(cfg,path2indx,l1group2indx):
         l1seeds = convert_to_vec(pathdata['l1_seeds'],"std::string")
         hlt_indx = path2indx[pathname]
         l1_indx = l1group2indx[make_l1seed_str(pathdata['l1_seeds'])]
-        trigpaths.push_back(ROOT.RateFuncs.TrigPath(pathname,hlt_indx,l1_indx['indx'],prescales,l1seeds,pathdata['physics']))        
+        trigpaths.push_back(ROOT.RateFuncs.TrigPath(pathname,hlt_indx,l1_indx['indx'],prescales,l1seeds,l1_indx['prescale'],pathdata['physics']))        
     return trigpaths
 
 def get_nr_pscols(cfg):
@@ -110,6 +117,10 @@ if __name__ == "__main__":
     l1menu_tree = ROOT.L1TUtmTriggerMenuRcd
     l1menu_tree.GetEntry(0)
     l1menu = l1menu_tree.L1TUtmTriggerMenu__
+    l1ps_tbl_tree = ROOT.L1TGlobalPrescalesVetosRcd
+    l1ps_tbl_tree.GetEntry(0)
+    l1ps_tbl = l1ps_tbl_tree.L1TGlobalPrescalesVetos__
+    
 
     ratetree = ROOT.TChain("tsgRateTree","")
     for filename in filenames:
@@ -120,7 +131,8 @@ if __name__ == "__main__":
  
     outfile = ROOT.TFile.Open(args.out_filename,"RECREATE")
     
-    l1_groups = make_l1groups(cfg,l1menu)
+    #hard coding to ps column 1 which is what this particular data was taken with
+    l1_groups = make_l1groups(cfg,l1menu,l1ps_tbl.prescale_table_[2])
     trig_paths = make_trigpaths(cfg,path2indx,l1_groups)
     datasets = make_datasets(cfg,path2indx)
     nr_col = get_nr_pscols(cfg)
