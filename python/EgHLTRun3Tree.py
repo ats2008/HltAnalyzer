@@ -10,6 +10,7 @@ from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 from functools import partial
 import itertools
 from array import array
+import six
 
 class EgHLTRun3Tree:
     def __init__(self,tree_name,evtdata,min_et=0.,weights=None):
@@ -101,7 +102,7 @@ class EgHLTRun3Tree:
         vars_.update(self.eg_extra_vars)
 
         self.egobj_vars = []        
-        for name,func in vars_.iteritems():
+        for name,func in six.iteritems(vars_):
             self.egobj_vars.append(TreeVar(self.tree,"eg_"+name,func,max_egs,egobjnr_name))
             
         gen_vars_names = {
@@ -113,7 +114,7 @@ class EgHLTRun3Tree:
             'vz/F' : UnaryFunc(partial(ROOT.reco.GenParticle.vz)),
         }
         self.gen_vars = []
-        for name,func in gen_vars_names.iteritems():
+        for name,func in six.iteritems(gen_vars_names):
             self.gen_vars.append(TreeVar(self.tree,"eg_gen_"+name,func,max_egs,egobjnr_name))
         
         l1eg_vars_names = {
@@ -133,7 +134,7 @@ class EgHLTRun3Tree:
         }
             
         self.l1eg_vars = []
-        for name,func in l1eg_vars_names.iteritems():
+        for name,func in six.iteritems(l1eg_vars_names):
             self.l1eg_vars.append(TreeVar(self.tree,"eg_l1eg_"+name,func,max_egs,egobjnr_name))
 
         trig_names = ["Gen_QCDMuGenFilter",

@@ -69,7 +69,7 @@ class EcalULTree:
         self.egul_vars = []        
         self.egrun2_vars = []        
         self.egrun3_vars = []        
-        for name,func in vars_.iteritems():
+        for name,func in six.iteritems(vars_):
             self.egul_vars.append(TreeVar(self.tree,"egul_"+name,func,max_egs,egobjnr_name))
             self.egrun2_vars.append(TreeVar(self.tree,"egrun2_"+name,func,max_egs,egobjnr_name))
             self.egrun3_vars.append(TreeVar(self.tree,"egrun3_"+name,func,max_egs,egobjnr_name))

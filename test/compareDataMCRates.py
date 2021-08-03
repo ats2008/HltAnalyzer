@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 import argparse
 import ROOT
+import six
 import re
 
 from Analysis.HLTAnalyserPy.HistTools import get_from_canvas,get_from_file,dump_graphic_coord
@@ -12,7 +13,7 @@ nr_bunches_mc = 2666 #30MHz collision rate
 
 def associate_hists(mc_hists,data_hists,qcd_hists=[],ewk_hists=[]):
     hists = {}
-    for mc_hist_name,mc_hist in mc_hists.iteritems():
+    for mc_hist_name,mc_hist in six.iteritems(mc_hists):
         path_name = re.match('([\w]+)(HLT_[\w]+)_v',mc_hist_name).group(2)
         hists[path_name] = {'mc' : mc_hist}
         if path_name+"_Hist" in data_hists:
@@ -113,7 +114,7 @@ def make_mc_process_comp(tot_hist,qcd_hist,ewk_hist):
     ROOT.gROOT.FindObject("c1").Update()
 
 def dict_iteration(hists,function,keys):
-    for name,hist_pair in hists.iteritems():
+    for name,hist_pair in six.iteritems(hists):
         args = [hist_pair[key] for key in keys]
         yield function(*args)
         
@@ -124,7 +125,7 @@ def print_canvas(c1,out_name,types=[".gif",".C",".pdf",".png",".root"]):
 
 
 def plot_and_print(hists,function,keys,out_name):
-    for name,hist_pair in hists.iteritems():
+    for name,hist_pair in six.iteritems(hists):
         args = [hist_pair[key] for key in keys]
         yield function(*args)
         yield print_canvas(ROOT.gROOT.FindObject("c1"),out_name.format(name))
@@ -147,13 +148,13 @@ if __name__ == "__main__":
     mc_tot_hists = get_from_file(mc_file,starts_with="rate_HLT")
     mc_qcd_hists = get_from_file(mc_file,starts_with="rate_qcd_HLT")
     mc_ewk_hists = get_from_file(mc_file,starts_with="rate_ewk_HLT")
-    [h.Scale(1./nr_bunches_mc) for n,h in mc_tot_hists.iteritems()]
-    [h.Scale(1./nr_bunches_mc) for n,h in mc_qcd_hists.iteritems()]
-    [h.Scale(1./nr_bunches_mc) for n,h in mc_ewk_hists.iteritems()]
+    [h.Scale(1./nr_bunches_mc) for n,h in six.iteritems(mc_tot_hists)]
+    [h.Scale(1./nr_bunches_mc) for n,h in six.iteritems(mc_qcd_hists)]
+    [h.Scale(1./nr_bunches_mc) for n,h in six.iteritems(mc_ewk_hists)]
     data_hists = get_from_file(data_file)   
     hists = associate_hists(mc_tot_hists,data_hists,qcd_hists = mc_qcd_hists,ewk_hists = mc_ewk_hists)
 
-    for name,hist_pair in hists.iteritems():
+    for name,hist_pair in six.iteritems(hists):
      #   make_data_mc_comp(hist_pair['data'],hist_pair['mc'])
         make_mc_process_comp(hist_pair['mc'],hist_pair['qcd'],hist_pair['ewk'])
 

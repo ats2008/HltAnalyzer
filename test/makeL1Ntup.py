@@ -21,6 +21,8 @@ from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 from functools import partial
 import itertools
 from array import array
+import six
+
 def match_tkeg_index(egidx,trkegs):
     for trkeg in trkegs:
         if trkeg.EGRef().key()==egidx:
@@ -91,16 +93,13 @@ class L1Tree:
         self.l1pho_nr = TreeVar(self.tree,nrpho_name+"/i",UnaryFunc(partial(len)))
        # self.l1ele_nr = TreeVar(self.tree,nrele_name+"/i",UnaryFunc(partial(len)))
         self.l1pho_vars = []
-        for name,func in l1pho_vars_names.iteritems():
+        for name,func in six.iteritems(l1pho_vars_names):
             self.l1pho_vars.append(TreeVar(self.tree,"eg_l1pho_"+name,func,max_l1egs,nrpho_name))   
         l1ele_vars_names = dict(l1pho_vars_names)
         l1ele_vars_names.update({
             'vz/F' : UnaryFunc('trkzVtx()'),
             'trkCurve/F' : UnaryFunc('trackCurvature()')        
         })
-      #  self.l1ele_vars = []
-       # for name,func in l1ele_vars_names.iteritems():
-        #    self.l1ele_vars.append(TreeVar(self.tree,"eg_l1ele_"+name,func,max_l1egs,nrele_name))   
         self.initialised = True
 
     def fill(self):

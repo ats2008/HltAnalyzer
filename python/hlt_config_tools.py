@@ -4,6 +4,7 @@ import FWCore.ParameterSet.Config as cms
 import json
 import subprocess
 import os
+import six
 
 def enableESConditionsDump(process):
     process.escontent = cms.EDAnalyzer( "PrintEventSetupContent",
@@ -264,7 +265,7 @@ def rename_mod_inputs(pset,oldmod,newmod):
                     rename_mod_inputs(para[index],oldmod,newmod)
         
 def rename_mod_inputs_old(pset,oldmod,newmod):
-    for paraname,para in pset.parameters_().iteritems(): 
+    for paraname,para in six.iteritems(pset.parameters_()):
         para_type = para.pythonTypeName()          
         if para_type == "cms.PSet":
             print "PSet"
@@ -298,13 +299,13 @@ def rename_module(process,name,new_name):
     mod = getattr(process,name)
     setattr(process,new_name,mod.clone())
     new_mod = getattr(process,new_name)
-    for taskname,task in process.tasks.iteritems():
+    for taskname,task in six.iteritems(process.tasks):
         task.replace(mod,new_mod)
-    for seqname,seq in process.sequences.iteritems():
+    for seqname,seq in six.iteritems(process.sequences):
         seq.replace(mod,new_mod)
-    for pathname,path in process.paths.iteritems():
+    for pathname,path in six.iteritem(process.paths):
         path.replace(mod,new_mod)
-    for pathname,path in process.endpaths.iteritems():
+    for pathname,path in six.iteritems(process.endpaths):
         path.replace(mod,new_mod)
     rename_mod_inputs_allprod(process,name,new_name)
     delattr(process,name)

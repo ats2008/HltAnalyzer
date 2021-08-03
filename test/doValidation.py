@@ -8,6 +8,7 @@ import ROOT
 import json
 import re
 import os
+import six
 from collections import OrderedDict
 
 from DataFormats.FWLite import Events, Handle
@@ -275,9 +276,9 @@ def compare_hists_indx(ref_filename,tar_filename,tar_label="target",ref_label="r
     html_body.append("""
 Failing comparisons are indicated in red in the table of contents. The criteria for failing is currently a pol0 fit that either has Prob(chi2,ndof)<0.05 or fits to a p0 more than 2 sigma away from 1.0<br><br>{toc}
 """)
-    for collname,coll in tar_index.iteritems():
+    for collname,coll in six.iteritems(tar_index):
         html_body.append("<h2>{}</h2>".format(coll['desc']))
-        for histbin_name,histbin_data in coll['hists'].iteritems():
+        for histbin_name,histbin_data in six.iteritems(coll['hists']):
             html_body.append('<h3 id="{coll}{hist}">{coll} : {hist}</h3>'.format(coll=coll['desc'],hist=histbin_name))
             failing_comp = False
             hists_sorted = sorted(histbin_data,key=lambda k: k['name'])
