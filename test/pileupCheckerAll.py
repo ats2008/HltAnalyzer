@@ -10,6 +10,7 @@ import random
 import time
 import shutil
 import subprocess
+import six
 from DataFormats.FWLite import Events, Handle
 from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products,add_product
 
@@ -76,10 +77,10 @@ if __name__ == "__main__":
 
     blocks_being_checked = []
     threads = []
-    for site_name, site_datasets in site_data.iteritems():
+    for site_name, site_datasets in six.iteritems(site_data):
         if site_name in sites_to_skip:
             continue
-        for dataset_name, dataset_info in site_datasets.iteritems():
+        for dataset_name, dataset_info in six.iteritems(site_datasets):
             for block_info in dataset_info['blocks']:
                 if block_info['name'] not in block_results:
                     threads.append(JobThread(block_info,dataset_name,dataset_info['nrevents'],site_name,args.prefix,args.maxevents))

@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 from DataFormats.FWLite import Events, Handle
+import six
 
 """
 note to self:
@@ -51,7 +52,7 @@ class EvtData:
         self.got_handles = []
         self.event = event
         if not on_demand:
-            for name,handle in vars(self.handles).iteritems():            
+            for name,handle in six.iteritems(vars(self.handles)):            
                 handle.get(event)
                 self.got_handles.append(name)
  

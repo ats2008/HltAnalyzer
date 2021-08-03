@@ -7,6 +7,7 @@ import sys
 import ROOT
 import json
 import re
+import six
 from DataFormats.FWLite import Events, Handle
 from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products, add_product,get_objs
 
@@ -48,12 +49,12 @@ class L1Tree:
         nrmus_name = "nrMuons"
         self.l1eg_nr = TreeVar(self.tree,nregs_name+"/i",UnaryFunc(partial(len)))
         self.l1eg_vars = []
-        for name,func in l1_vars_names.iteritems():
+        for name,func in six.iteritems(l1_vars_names):
             self.l1eg_vars.append(TreeVar(self.tree,"l1eg_"+name,func,max_l1egs,nregs_name)) 
 
         self.l1mu_nr = TreeVar(self.tree,nrmus_name+"/i",UnaryFunc(partial(len)))
         self.l1mu_vars = []  
-        for name,func in l1_vars_names.iteritems():
+        for name,func in six.iteritems(l1_vars_names):
             self.l1mu_vars.append(TreeVar(self.tree,"l1mu_"+name,func,max_l1mus,nrmus_name))   
        
         self.initialised = True

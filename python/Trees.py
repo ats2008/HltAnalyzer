@@ -10,6 +10,7 @@ from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 from functools import partial
 import itertools
 from array import array
+import six
 
 class EgHLTTree:
     def __init__(self,tree_name,evtdata,min_et=0.,weights=None):
@@ -116,7 +117,7 @@ class EgHLTTree:
         vars_.update(self.eg_extra_vars)
 
         self.egobj_vars = []        
-        for name,func in vars_.iteritems():
+        for name,func in six.iteritems(vars_):
             self.egobj_vars.append(TreeVar(self.tree,"eg_"+name,func,max_egs,egobjnr_name))
             
         gen_vars_names = {
@@ -128,7 +129,7 @@ class EgHLTTree:
             'vz/F' : UnaryFunc(partial(ROOT.reco.GenParticle.vz)),
         }
         self.gen_vars = []
-        for name,func in gen_vars_names.iteritems():
+        for name,func in six.iteritems(gen_vars_names):
             self.gen_vars.append(TreeVar(self.tree,"eg_gen_"+name,func,max_egs,egobjnr_name))
         
         scales_params = L1Tools.make_egscale_dict()
@@ -147,7 +148,7 @@ class EgHLTTree:
             'etThres/F' : UnaryFunc(partial(L1Tools.eg_thres,scales_params))            
             }
         self.l1pho_vars = []
-        for name,func in l1pho_vars_names.iteritems():
+        for name,func in six.iteritems(l1pho_vars_names):
             self.l1pho_vars.append(TreeVar(self.tree,"eg_l1pho_"+name,func,max_egs,egobjnr_name))   
         l1ele_vars_names = dict(l1pho_vars_names)
         l1ele_vars_names.update({
@@ -155,7 +156,7 @@ class EgHLTTree:
             'trkCurve/F' : UnaryFunc('trackCurvature()')        
         })
         self.l1ele_vars = []
-        for name,func in l1ele_vars_names.iteritems():
+        for name,func in six.iteritems(l1ele_vars_names):
             self.l1ele_vars.append(TreeVar(self.tree,"eg_l1ele_"+name,func,max_egs,egobjnr_name))   
 
 

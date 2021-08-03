@@ -8,6 +8,7 @@ import argparse
 import shutil
 import json
 import re
+import six
 
 def process_dir(dir_,proc_name="HLTX",read_nrtot_directly=False):
     files = glob.glob(os.path.join(dir_,"*.root"))
@@ -106,14 +107,14 @@ if __name__ == "__main__":
         
         
         
-    for name,data in job_data.iteritems():
+    for name,data in six.iteritems(job_data):
         with open("{}.list".format(name),"w") as f:
             for filename in data['job_stats']['good_files']:
                 f.write(filename+"\n")
                 
 
     if args.clean:
-        for k,v in job_data.iteritems():
+        for k,v in six.iteritems(job_data):
             clean_failed_jobs(v['job_stats']['bad_files'])
     
     
