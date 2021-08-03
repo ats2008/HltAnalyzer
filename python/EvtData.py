@@ -4,6 +4,16 @@ from __future__ import print_function
 
 from DataFormats.FWLite import Events, Handle
 
+"""
+note to self:
+could change this to use real edm::Handles...
+
+eg:
+handleMu=ROOT.edm.Handle("BXVector<l1t::Muon>")()      
+ROOT.edm.EventBase.getByLabel(ROOT.edm.InputTag("hltGtStage2Digis:Muon"),handleMu) #will fail but necessary, must load something
+ROOT.edm.EventBase.getByLabel(events.object().event(),ROOT.edm.InputTag("hltGtStage2Digis:Muon"),handleMu)
+"""
+
 class HandleData(Handle):
     def __init__(self,product,label):
         Handle.__init__(self,product)
@@ -109,13 +119,20 @@ def add_product(prods,name,type_,tag):
     prods.append({'name' : name, 'type' : type_, 'tag' : tag})
 
 std_products=[]
-add_product(std_products,"egtrigobjs","std::vector<trigger::EgammaObject>","hltEgammaHLTExtra")
+add_product(std_products,"egtrigobjs_l1seed","std::vector<trigger::EgammaObject>","hltEgammaHLTExtra")
 add_product(std_products,"egtrigobjs_unseeded","std::vector<trigger::EgammaObject>","hltEgammaHLTExtraUnseeded")
 add_product(std_products,"genparts","std::vector<reco::GenParticle>","genParticles")
 add_product(std_products,"geninfo","GenEventInfoProduct","generator")
 add_product(std_products,"pu_sum","std::vector<PileupSummaryInfo>","addPileupInfo")
 add_product(std_products,"trig_sum","trigger::TriggerEvent","hltTriggerSummaryAOD")
 add_product(std_products,"trig_res","edm::TriggerResults","TriggerResults")
+add_product(std_products,"algblk","BXVector<GlobalAlgBlk>","hltGtStage2Digis")
+add_product(std_products,"extblk","BXVector<GlobalExtBlk>","hltGtStage2Digis")
+add_product(std_products,"l1egamma","BXVector<l1t::EGamma>","hltGtStage2Digis:EGamma")
+add_product(std_products,"l1sum","BXVector<l1t::EtSum>","hltGtStage2Digis:EtSum")
+add_product(std_products,"l1jet","BXVector<l1t::Jet>","hltGtStage2Digis:Jet")
+add_product(std_products,"l1muon","BXVector<l1t::Muon>","hltGtStage2Digis:Muon")
+add_product(std_products,"l1tau","BXVector<l1t::Tau>","hltGtStage2Digis:Tau")
 
 phaseII_products = []
 add_product(phaseII_products,"egtrigobjs","std::vector<trigger::EgammaObject>","hltEgammaHLTExtra")
