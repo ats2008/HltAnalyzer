@@ -1,11 +1,28 @@
 import FWCore.ParameterSet.Config as cms
 
+"""
+this works for conditions which change on the run boundary
+it cycles through runs 272007 - 400000 and writes the record out for each one
+"""
+
 process = cms.Process("WriteTest")
-process.source = cms.Source( "EmptySource")
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1))
+
+import FWCore.ParameterSet.VarParsing as VarParsing
+options = VarParsing.VarParsing ('analysis') 
+#default is Run2016B
+options.register('startRunNr',272007,options.multiplicity.singleton,options.varType.int,"start run number ")
+options.register('endRunNr',400000,options.multiplicity.singleton,options.varType.int,"end run number" )
+options.register('globalTag',"113X_dataRun3_HLT_v3",options.multiplicity.singleton,options.varType.string,"global tag" )
+options.parseArguments()
+
+process.source = cms.Source( "EmptySource",
+                             numberEventsInRun=cms.untracked.uint32(1),
+                             firstRun=cms.untracked.uint32(options.startRunNr)
+                           )
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(options.endRunNr-options.startRunNr+1))
  
 process.writer = cms.EDAnalyzer("FWLiteESRecordWriterAnalyzer",
-   fileName = cms.untracked.string("cond_test.root"),
+   fileName = cms.untracked.string(options.outputFile),
    L1TUtmTriggerMenuRcd = cms.untracked.VPSet(
        cms.untracked.PSet(
            type=cms.untracked.string("L1TUtmTriggerMenu"),
@@ -20,7 +37,7 @@ process.writer = cms.EDAnalyzer("FWLiteESRecordWriterAnalyzer",
        )  
    )
 process.GlobalTag = cms.ESSource( "PoolDBESSource",
-    globaltag = cms.string( "113X_dataRun3_HLT_v3" ),
+    globaltag = cms.string( options.globalTag ),
     RefreshEachRun = cms.untracked.bool( False ),
     snapshotTime = cms.string( "" ),
     toGet = cms.VPSet( 
@@ -43,12 +60,5 @@ process.GlobalTag = cms.ESSource( "PoolDBESSource",
     RefreshOpenIOVs = cms.untracked.bool( False ),
     DumpStat = cms.untracked.bool( False )
 )
-process.source = cms.Source( "PoolSource",
-    fileNames = cms.untracked.vstring(
-        '/store/data/Run2018D/EphemeralHLTPhysics1/RAW/v1/000/323/775/00000/FE646EF8-1F20-C543-995D-3DBB282972BA.root',
-    ),
-    inputCommands = cms.untracked.vstring(
-        'keep *'
-    )
-)
+
 process.out = cms.EndPath(process.writer)
