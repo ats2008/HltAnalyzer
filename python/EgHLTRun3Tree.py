@@ -35,7 +35,7 @@ class EgHLTRun3Tree:
             TreeVar(self.tree,"runnr/i",UnaryFunc("eventAuxiliary().run()")),
             TreeVar(self.tree,"lumiSec/i",UnaryFunc("eventAuxiliary().luminosityBlock()")),
             TreeVar(self.tree,"eventnr/i",UnaryFunc("eventAuxiliary().event()")),
-            TreeVar(self.tree,"bx/i",UnaryFunc("eventAuxiliary().bunchCrossing()")),
+            TreeVar(self.tree,"bx/I",UnaryFunc("eventAuxiliary().bunchCrossing()")),
            # TreeVar(self.tree,"time/I",UnaryFunc("eventAuxiliary().time().value()")),
         
         ]
