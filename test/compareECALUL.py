@@ -7,6 +7,7 @@ import sys
 import ROOT
 import json
 import re
+import six
 from DataFormats.FWLite import Events, Handle
 from Analysis.HLTAnalyserPy.EvtData import EvtData, EvtHandles,phaseII_products, add_product,get_objs
 from functools import partial
@@ -27,7 +28,7 @@ def get_eg(seed_id,egs):
     return None
 
 def combine_scs(*colls):
-    seed_ids = {x.superCluster().seed().seed().rawId() for coll in colls for x in coll}
+    seed_ids = {x.superCluster().seed().seed().rawId() for coll in colls if coll for x in coll}
     scs = [[get_eg(seed_id,coll) for coll in colls] for seed_id in seed_ids]
     return scs
     
