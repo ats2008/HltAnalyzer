@@ -22,7 +22,7 @@ from Analysis.HLTAnalyserPy.NtupTools import TreeVar
 from Analysis.HLTAnalyserPy.EvtWeights import EvtWeights
 
 def get_eg(seed_id,egs):
-    for eg in egs:
+    for eg in (egs or []):
         if eg.superCluster().seed().seed().rawId()==seed_id:
             return eg
     return None
