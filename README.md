@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+
+#### HltAnalyzer
+_Fork from [Sams HLT Analyzer](https://gitlab.cern.ch/sharper/HLTAnalyserPy)_
+
 # HLTAnalyserPy
 
 A set of tools to analyse the HLT EDM files in py fwlite
@@ -222,6 +227,5 @@ Simply pass the EvtData object into the EvtData.QCDWeightCalc.weight method. Cur
 An example is checkPUPtHat.py
 
   
-
 
 
